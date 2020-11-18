@@ -36,6 +36,14 @@ public class HttpClientProperties {
     private String url;
 
     /**
+     * The auth token required to connect. This should be passed as part of the Authentication
+     * header.
+     *
+     * "Authentication: bearer <token>"
+     */
+    private String token;
+
+    /**
      * Maximum number of simultaneous connections to the service.
      */
     private int maxConnections = 100;
@@ -54,6 +62,14 @@ public class HttpClientProperties {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public int getMaxConnections() {
