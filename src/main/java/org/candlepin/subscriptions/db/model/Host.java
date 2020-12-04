@@ -110,6 +110,7 @@ public class Host implements Serializable {
 
     }
 
+
     public Host(String inventoryId, String insightsId, String accountNumber, String orgId, String subManId) {
         this.inventoryId = inventoryId;
         this.insightsId = insightsId;
