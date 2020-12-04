@@ -521,6 +521,59 @@ class HostRepositoryTest {
         assertEquals(1, physical.getCores());
     }
 
+    @Test
+    void testDisplayNameFilter() {
+
+        OffsetDateTime expLastSeen = OffsetDateTime.now();
+        String expInventoryId = "INV";
+        String expInsightsId = "INSIGHTS_ID";
+        String expAccount = "ACCT";
+        String expOrg = "ORG";
+        String expSubId = "SUB_ID";
+        String expDisplayName = "BANANAS";
+        HardwareMeasurementType expMeasurementType = HardwareMeasurementType.GOOGLE;
+        HostHardwareType expHardwareType = HostHardwareType.PHYSICAL;
+        int expCores = 8;
+        int expSockets = 4;
+        int expGuests = 10;
+        boolean expUnmappedGuest = true;
+        boolean expIsHypervisor = true;
+        String expCloudProvider = "CLOUD_PROVIDER";
+
+        Host host = new Host(expInventoryId, expInsightsId, expAccount, expOrg, expSubId);
+        host.setNumOfGuests(expGuests);
+        host.setDisplayName(expDisplayName);
+        host.setLastSeen(expLastSeen);
+        host.setCores(12);
+        host.setSockets(12);
+        host.setHypervisor(expIsHypervisor);
+        host.setUnmappedGuest(expUnmappedGuest);
+        host.setCloudProvider(expCloudProvider);
+        host.setHardwareType(expHardwareType);
+
+        host.addBucket(RHEL,
+            ServiceLevel.PREMIUM,
+            Usage.PRODUCTION,
+            false,
+            expSockets,
+            expCores,
+            expMeasurementType
+        );
+
+        repo.saveAndFlush(host);
+
+        Page<TallyHostView> hosts = repo.getTallyHostViews(expAccount,
+            RHEL,
+            ServiceLevel.PREMIUM,
+            Usage.PRODUCTION,
+            0,
+            0,
+            PageRequest.of(0, 10)
+        );
+
+        System.err.println(hosts.getContent().get(0).getDisplayName());
+    }
+
     private Host createHost(String inventoryId, String account) {
         Host host = new Host(inventoryId, "INSIGHTS_" + inventoryId, account, "ORG_" + account,
             "SUBMAN_" + inventoryId);
