@@ -17,8 +17,9 @@
     </springProfile>
 
     <springProfile name="devlocal">
+        <!--        Devlocal pattern prints out method name & line number, and abbreviates package/class names-->
         <property name="CONSOLE_APPENDER_PATTERN"
-            value="%d{ISO8601} [thread=%thread] [%-5p] [%c] %X{user}- %M:%line %m%n%ex{full, SECURITY_STACKTRACE_EVAL}"/>
+            value="%d{ISO8601} [thread=%thread] [%-5p] [%c{5}] %X{user}- %M:%line %m%n%ex{full, SECURITY_STACKTRACE_EVAL}"/>
         <property name="ROOT_LOGGER_LEVEL" value="DEBUG"/>
         <property name="CANDLEPIN_LOGGER_LEVEL" value="DEBUG"/>
         <property name="SPLUNK_APPENDER_LOG_FILE" value="./logs/rhsm-subscriptions.log}"/>
