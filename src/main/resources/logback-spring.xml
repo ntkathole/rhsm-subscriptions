@@ -5,31 +5,54 @@
         <marker>SECURITY_STACKTRACE</marker>
     </evaluator>
 
+    <!--        //TODO could probably default some of these inline?-->
+    <!--        //TODO make sure that ${LOG_FILE syntax still works as intended-->
+    <springProfile name="!devlocal">
+        <property name="CONSOLE_APPENDER_PATTERN"
+            value="%d{ISO8601} [thread=%thread] [%-5p] [%c] %X{user}- %m%n%ex{full, SECURITY_STACKTRACE_EVAL}"/>
+        <property name="ROOT_LOGGER_LEVEL" value="WARN"/>
+        <property name="CANDLEPIN_LOGGER_LEVEL" value="INFO"/>
+        <property name="SPLUNK_APPENDER_LOG_FILE" value="${LOG_FILE:-/tmp/rhsm-subscriptions.log}"/>
+        <property name="SPLUNK_APPENDER_MAX_HISTORY" value="1"/>
+    </springProfile>
+
+    <springProfile name="devlocal">
+        <property name="CONSOLE_APPENDER_PATTERN"
+            value="%d{ISO8601} [thread=%thread] [%-5p] [%c] %X{user}- %M:%line %m%n%ex{full, SECURITY_STACKTRACE_EVAL}"/>
+        <property name="ROOT_LOGGER_LEVEL" value="DEBUG"/>
+        <property name="CANDLEPIN_LOGGER_LEVEL" value="DEBUG"/>
+        <property name="SPLUNK_APPENDER_LOG_FILE" value="./logs/rhsm-subscriptions.log}"/>
+        <property name="SPLUNK_APPENDER_MAX_HISTORY" value="5"/>
+    </springProfile>
+
     <appender name="ConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <!-- %ex{full, SECURITY_STACKTRACE_EVAL} will display the full stack trace of the exception only
              if the evaluator called SECURITY_STACKTRACE_EVAL returns false. -->
-            <pattern>%d{ISO8601} [thread=%thread] [%-5p] [%c] %X{user}- %m%n%ex{full, SECURITY_STACKTRACE_EVAL}</pattern>
+            <pattern>${CONSOLE_APPENDER_PATTERN}</pattern>
         </encoder>
     </appender>
 
     <appender name="SplunkAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_FILE:-/tmp/rhsm-subscriptions.log}</file>
+        <file>${SPLUNK_APPENDER_LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        <!-- daily rollover -->
-        <fileNamePattern>${LOG_FILE:-/tmp/rhsm-subscriptions.log}.%d{yyyy-MM-dd-HH-mm}.log</fileNamePattern>
-        <maxHistory>1</maxHistory>
-        <totalSizeCap>100MB</totalSizeCap>
+            <!-- daily rollover -->
+            <fileNamePattern>${LOG_FILE:-/tmp/rhsm-subscriptions.log}.%d{yyyy-MM-dd-HH-mm}.log
+            </fileNamePattern>
+            <maxHistory>1</maxHistory>
+            <totalSizeCap>100MB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS'+0000'} [thread=%t] [level=%p] [category=%c] %X{user} - %m%n%ex{full, SECURITY_STACKTRACE_EVAL}</pattern>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS'+0000'} [thread=%t] [level=%p] [category=%c] %X{user} -
+                %m%n%ex{full, SECURITY_STACKTRACE_EVAL}
+            </pattern>
         </encoder>
     </appender>
 
-    <logger name="org.candlepin" level="INFO"/>
+    <logger name="org.candlepin" level="${CANDLEPIN_LOGGER_LEVEL}"/>
 
-    <root level="WARN">
-        <appender-ref ref="ConsoleAppender" />
-        <appender-ref ref="SplunkAppender" />
+    <root level="${ROOT_LOGGER_LEVEL}">
+        <appender-ref ref="ConsoleAppender"/>
+        <appender-ref ref="SplunkAppender"/>
     </root>
 </configuration>

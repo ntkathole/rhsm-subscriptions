@@ -38,9 +38,10 @@ spring:
   profiles:
     active:
       - api
-      - in-memory-queue
-      - capacity-ingress
-      - worker
+      - devlocal
+#      - in-memory-queue
+#      - capacity-ingress
+#      - worker
   liquibase:
     change-log: classpath:/liquibase/changelog.xml
   kafka:
