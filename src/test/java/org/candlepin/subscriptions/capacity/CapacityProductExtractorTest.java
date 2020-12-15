@@ -22,7 +22,7 @@ package org.candlepin.subscriptions.capacity;
 
 import static org.hamcrest.MatcherAssert.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.files.ProductIdToProductsMapSource;
 import org.candlepin.subscriptions.util.ApplicationClock;
 

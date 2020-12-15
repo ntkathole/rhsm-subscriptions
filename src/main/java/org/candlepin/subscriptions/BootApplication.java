@@ -20,6 +20,8 @@
  */
 package org.candlepin.subscriptions;
 
+import org.candlepin.subscriptions.config.ApplicationConfiguration;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

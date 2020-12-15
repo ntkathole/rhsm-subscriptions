@@ -21,7 +21,7 @@
 package org.candlepin.subscriptions.task.queue;
 
 import org.candlepin.subscriptions.task.queue.inmemory.ExecutorTaskQueueConfiguration;
-import org.candlepin.subscriptions.task.queue.kafka.KafkaTaskProducerConfiguration;
+import org.candlepin.subscriptions.config.KafkaTaskProducerConfiguration;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

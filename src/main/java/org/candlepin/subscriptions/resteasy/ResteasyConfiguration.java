@@ -20,7 +20,7 @@
  */
 package org.candlepin.subscriptions.resteasy;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 
 import org.jboss.resteasy.springboot.ResteasyAutoConfiguration;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;

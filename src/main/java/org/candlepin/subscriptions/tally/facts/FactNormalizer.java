@@ -20,7 +20,7 @@
  */
 package org.candlepin.subscriptions.tally.facts;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.db.model.HardwareMeasurementType;
 import org.candlepin.subscriptions.db.model.HostHardwareType;
 import org.candlepin.subscriptions.db.model.ServiceLevel;

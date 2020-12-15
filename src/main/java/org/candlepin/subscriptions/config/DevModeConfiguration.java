@@ -18,7 +18,7 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions;
+package org.candlepin.subscriptions.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

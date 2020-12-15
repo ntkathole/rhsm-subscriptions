@@ -18,27 +18,38 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.capacity;
+package org.candlepin.subscriptions.config;
 
 import org.candlepin.subscriptions.db.RhsmSubscriptionsDataSourceConfiguration;
-import org.candlepin.subscriptions.files.ProductIdMappingConfiguration;
-import org.candlepin.subscriptions.resteasy.ResteasyConfiguration;
+import org.candlepin.subscriptions.spring.JobRunner;
 
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 
 /**
- * Configuration for the "capacity-ingress" profile.
+ * Configuration for the "liquibase-only" profile.
  *
- * This profile is used to receive capacity records from an internal service.
+ * This profile can be used during development to run the liquibase changes and then simply exit.
  */
 @Configuration
-@Profile("capacity-ingress")
-@Import({ResteasyConfiguration.class, RhsmSubscriptionsDataSourceConfiguration.class,
-    ProductIdMappingConfiguration.class})
-@ComponentScan(basePackages = "org.candlepin.subscriptions.capacity")
-public class CapacityIngressConfiguration {
-    /* Intentionally empty */
+@Profile("liquibase-only")
+@Import(RhsmSubscriptionsDataSourceConfiguration.class)
+public class LiquibaseUpdateOnlyConfiguration {
+    @Bean
+    JobRunner jobRunner(ApplicationContext context) {
+        return new JobRunner(new LiquibaseUpdateOnly(), context);
+    }
+
+    /**
+     * No-op job.
+     */
+    public static class LiquibaseUpdateOnly implements Runnable {
+        @Override
+        public void run() {
+            /* Intentionally left blank */
+        }
+    }
 }

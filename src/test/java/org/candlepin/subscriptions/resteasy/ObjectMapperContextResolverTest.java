@@ -23,7 +23,7 @@ package org.candlepin.subscriptions.resteasy;
 import static org.hamcrest.MatcherAssert.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.jackson.TestPojo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

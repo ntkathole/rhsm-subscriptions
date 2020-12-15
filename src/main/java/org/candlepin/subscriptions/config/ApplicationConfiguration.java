@@ -18,19 +18,14 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions;
+package org.candlepin.subscriptions.config;
 
-import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
-import org.candlepin.subscriptions.resource.ApiConfiguration;
-import org.candlepin.subscriptions.retention.PurgeSnapshotsConfiguration;
 import org.candlepin.subscriptions.security.SecurityConfig;
-import org.candlepin.subscriptions.tally.TallyWorkerConfiguration;
-import org.candlepin.subscriptions.tally.job.CaptureSnapshotsConfiguration;
 import org.candlepin.subscriptions.util.ApplicationClock;
 import org.candlepin.subscriptions.util.HawtioConfiguration;
-import org.candlepin.subscriptions.util.LiquibaseUpdateOnlyConfiguration;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -44,11 +39,8 @@ import javax.validation.Validator;
 
 /** Class to hold configuration beans common to all profiles and import all profile configurations */
 @Configuration
-@Import({
-    ApiConfiguration.class, CapacityIngressConfiguration.class, CaptureSnapshotsConfiguration.class,
-    PurgeSnapshotsConfiguration.class, LiquibaseUpdateOnlyConfiguration.class, TallyWorkerConfiguration.class,
-    DevModeConfiguration.class, SecurityConfig.class, HawtioConfiguration.class
-})
+@Import({SecurityConfig.class, HawtioConfiguration.class})
+@ComponentScan(basePackages = "org.candlepin.subscriptions.config")
 public class ApplicationConfiguration implements WebMvcConfigurer {
     @Bean
     ApplicationProperties applicationProperties() {

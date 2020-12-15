@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Primary;
  * Configuration for Kafka common to both producers and consumers.
  */
 @Configuration
-class KafkaConfiguration {
+public class KafkaConfiguration {
     @Bean
     KafkaConfigurator kafkaConfigurator() {
         return new KafkaConfigurator();

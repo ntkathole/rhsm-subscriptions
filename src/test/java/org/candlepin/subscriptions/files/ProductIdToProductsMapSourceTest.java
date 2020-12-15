@@ -23,7 +23,7 @@ package org.candlepin.subscriptions.files;
 import static org.hamcrest.MatcherAssert.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.util.ApplicationClock;
 
 import org.hamcrest.Matchers;

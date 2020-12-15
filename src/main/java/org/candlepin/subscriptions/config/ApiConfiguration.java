@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 - 2019 Red Hat, Inc.
+ * Copyright (c) 2020 Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,28 +18,20 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.tally.job;
+package org.candlepin.subscriptions.config;
 
-import org.candlepin.subscriptions.spring.JobRunner;
-import org.candlepin.subscriptions.task.queue.TaskProducerConfiguration;
+import org.candlepin.subscriptions.db.RhsmSubscriptionsDataSourceConfiguration;
+import org.candlepin.subscriptions.resteasy.ResteasyConfiguration;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 
-/**
- * A class to hold all job related configuration.
- */
 @Configuration
-@Profile("capture-snapshots")
-@Import(TaskProducerConfiguration.class)
-@ComponentScan("org.candlepin.subscriptions.tally.job")
-public class CaptureSnapshotsConfiguration {
-    @Bean
-    JobRunner jobRunner(CaptureSnapshotsJob job, ApplicationContext applicationContext) {
-        return new JobRunner(job, applicationContext);
-    }
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enableApi", havingValue = "true")
+@ComponentScan(basePackages = "org.candlepin.subscriptions.resource")
+@Import({ResteasyConfiguration.class, RhsmSubscriptionsDataSourceConfiguration.class})
+public class ApiConfiguration {
+    /* Intentionally empty */
 }

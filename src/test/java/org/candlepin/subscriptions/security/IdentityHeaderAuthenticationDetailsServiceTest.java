@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.rbac.RbacApi;
 import org.candlepin.subscriptions.rbac.RbacService;
 import org.candlepin.subscriptions.rbac.model.Access;

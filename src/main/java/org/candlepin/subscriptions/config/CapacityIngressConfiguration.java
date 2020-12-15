@@ -18,25 +18,27 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.resource;
+package org.candlepin.subscriptions.config;
 
 import org.candlepin.subscriptions.db.RhsmSubscriptionsDataSourceConfiguration;
+import org.candlepin.subscriptions.files.ProductIdMappingConfiguration;
 import org.candlepin.subscriptions.resteasy.ResteasyConfiguration;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 
 /**
- * Configuration for the "api" profile.
+ * Configuration for the "capacity-ingress" profile.
  *
- * The API profile is responsible for handling customer-facing API requests.
+ * This profile is used to receive capacity records from an internal service.
  */
 @Configuration
-@Profile("api")
-@ComponentScan(basePackages = "org.candlepin.subscriptions.resource")
-@Import({ResteasyConfiguration.class, RhsmSubscriptionsDataSourceConfiguration.class})
-public class ApiConfiguration {
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enableCapacityIngress", havingValue = "true")
+@ComponentScan(basePackages = "org.candlepin.subscriptions.capacity")
+@Import({ResteasyConfiguration.class, RhsmSubscriptionsDataSourceConfiguration.class,
+    ProductIdMappingConfiguration.class})
+public class CapacityIngressConfiguration {
     /* Intentionally empty */
 }

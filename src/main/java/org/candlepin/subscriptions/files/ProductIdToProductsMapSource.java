@@ -20,7 +20,7 @@
  */
 package org.candlepin.subscriptions.files;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.util.ApplicationClock;
 
 import org.springframework.stereotype.Component;

@@ -18,17 +18,20 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.task.queue.kafka;
+package org.candlepin.subscriptions.config;
 
 import org.candlepin.subscriptions.task.queue.TaskQueue;
+import org.candlepin.subscriptions.task.queue.kafka.KafkaConfiguration;
+import org.candlepin.subscriptions.task.queue.kafka.KafkaConfigurator;
+import org.candlepin.subscriptions.task.queue.kafka.KafkaTaskQueue;
 import org.candlepin.subscriptions.task.queue.kafka.message.TaskMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 
@@ -40,11 +43,16 @@ import org.springframework.kafka.core.ProducerFactory;
  * which will handle creation of either in-memory or kafka task queue producers (depending on profile).
  */
 @Configuration
-@Profile("kafka-queue")
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enableKafkaQueue", havingValue = "true")
 @Import(KafkaConfiguration.class)
 public class KafkaTaskProducerConfiguration {
+
+    private final KafkaConfigurator kafkaConfigurator;
+
     @Autowired
-    private KafkaConfigurator kafkaConfigurator;
+    public KafkaTaskProducerConfiguration(KafkaConfigurator kafkaConfigurator) {
+        this.kafkaConfigurator = kafkaConfigurator;
+    }
 
     @Bean
     public ProducerFactory<String, TaskMessage> producerFactory(KafkaProperties kafkaProperties) {

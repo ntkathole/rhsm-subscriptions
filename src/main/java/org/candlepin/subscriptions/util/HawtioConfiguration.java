@@ -22,7 +22,7 @@ package org.candlepin.subscriptions.util;
 
 import static io.hawt.web.filters.BaseTagHrefFilter.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

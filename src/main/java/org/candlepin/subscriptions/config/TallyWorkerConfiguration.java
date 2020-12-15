@@ -18,15 +18,16 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.tally;
+package org.candlepin.subscriptions.config;
 
-import org.candlepin.subscriptions.ApplicationProperties;
 import org.candlepin.subscriptions.cloudigrade.ConcurrentApiFactory;
 import org.candlepin.subscriptions.files.ProductIdMappingConfiguration;
 import org.candlepin.subscriptions.files.ProductIdToProductsMapSource;
 import org.candlepin.subscriptions.http.HttpClientProperties;
 import org.candlepin.subscriptions.inventory.db.InventoryDataSourceConfiguration;
 import org.candlepin.subscriptions.jmx.JmxBeansConfiguration;
+import org.candlepin.subscriptions.tally.TallyTaskFactory;
+import org.candlepin.subscriptions.tally.TallyTaskQueueConfiguration;
 import org.candlepin.subscriptions.tally.facts.FactNormalizer;
 import org.candlepin.subscriptions.tally.files.RoleToProductsMapSource;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
@@ -36,12 +37,12 @@ import org.candlepin.subscriptions.task.queue.TaskConsumerFactory;
 import org.candlepin.subscriptions.util.ApplicationClock;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -58,8 +59,8 @@ import java.util.Set;
  */
 @EnableRetry
 @Configuration
-@Profile("worker")
-@Import({TallyTaskQueueConfiguration.class, TaskConsumerConfiguration.class,
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enableTallyWorker", havingValue = "true")
+@Import({ TallyTaskQueueConfiguration.class, TaskConsumerConfiguration.class,
     ProductIdMappingConfiguration.class, InventoryDataSourceConfiguration.class, JmxBeansConfiguration.class})
 @ComponentScan(basePackages = {
     "org.candlepin.subscriptions.cloudigrade",

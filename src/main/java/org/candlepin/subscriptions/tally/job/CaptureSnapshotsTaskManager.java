@@ -20,7 +20,7 @@
  */
 package org.candlepin.subscriptions.tally.job;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.db.AccountListSource;
 import org.candlepin.subscriptions.tally.AccountListSourceException;
 import org.candlepin.subscriptions.tally.TallyTaskQueueConfiguration;

@@ -20,7 +20,7 @@
  */
 package org.candlepin.subscriptions.tally.files;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.files.PerLineFileSource;
 import org.candlepin.subscriptions.util.ApplicationClock;
 

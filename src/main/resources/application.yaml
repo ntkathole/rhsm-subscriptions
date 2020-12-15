@@ -35,12 +35,6 @@ spring:
           batch_size: ${JDBC_BATCH_SIZE:100}
         order_inserts: true
         order_updates: true
-  profiles:
-    active:
-      - api
-      - in-memory-queue
-      - capacity-ingress
-      - worker
   liquibase:
     change-log: classpath:/liquibase/changelog.xml
   kafka:
@@ -69,6 +63,13 @@ hawtio:
   localAddressProbing: ${HAWTIO_LOCAL_ADDRESS_PROBING:true}
 
 rhsm-subscriptions:
+  feature:
+    enableApi: true
+    enableCapacityIngress: false
+    enableCaptureSnapshots: false
+    enableKafkaQueue: false
+    enablePurgeSnapshots: false
+    enableTallyWorker: false
   dev-mode: ${DEV_MODE:false}
   package_uri_mappings:
     # this mapping required here because it is used by our SecurityConfig, which is shared

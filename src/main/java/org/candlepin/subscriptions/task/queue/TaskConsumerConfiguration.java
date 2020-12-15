@@ -22,7 +22,7 @@ package org.candlepin.subscriptions.task.queue;
 
 import org.candlepin.subscriptions.task.queue.inmemory.ExecutorTaskQueue;
 import org.candlepin.subscriptions.task.queue.inmemory.ExecutorTaskQueueConsumerFactory;
-import org.candlepin.subscriptions.task.queue.kafka.KafkaTaskConsumerConfiguration;
+import org.candlepin.subscriptions.config.KafkaTaskConsumerConfiguration;
 import org.candlepin.subscriptions.task.queue.kafka.KafkaTaskConsumerFactory;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;

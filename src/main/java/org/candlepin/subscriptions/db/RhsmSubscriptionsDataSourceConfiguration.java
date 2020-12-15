@@ -20,7 +20,7 @@
  */
 package org.candlepin.subscriptions.db;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.tally.files.FileAccountSyncListSource;
 import org.candlepin.subscriptions.tally.files.ReportingAccountWhitelist;
 import org.candlepin.subscriptions.util.ApplicationClock;

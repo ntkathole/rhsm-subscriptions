@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Red Hat, Inc.
+ * Copyright (c) 2019 - 2019 Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,38 +18,28 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.util;
+package org.candlepin.subscriptions.config;
 
-import org.candlepin.subscriptions.db.RhsmSubscriptionsDataSourceConfiguration;
+import org.candlepin.subscriptions.retention.PurgeSnapshotsJob;
 import org.candlepin.subscriptions.spring.JobRunner;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 
 /**
- * Configuration for the "liquibase-only" profile.
+ * Configuration for the "purge-snapshots" profile.
  *
- * This profile can be used during development to run the liquibase changes and then simply exit.
+ * This profile defines a job that removes data that's older than our retention policy.
  */
 @Configuration
-@Profile("liquibase-only")
-@Import(RhsmSubscriptionsDataSourceConfiguration.class)
-public class LiquibaseUpdateOnlyConfiguration {
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enablePurgeSnapshots", havingValue = "true")
+@ComponentScan(basePackages = "org.candlepin.subscriptions.retention")
+public class PurgeSnapshotsConfiguration {
     @Bean
-    JobRunner jobRunner(ApplicationContext context) {
-        return new JobRunner(new LiquibaseUpdateOnly(), context);
-    }
-
-    /**
-     * No-op job.
-     */
-    public static class LiquibaseUpdateOnly implements Runnable {
-        @Override
-        public void run() {
-            /* Intentionally left blank */
-        }
+    JobRunner jobRunner(PurgeSnapshotsJob job, ApplicationContext applicationContext) {
+        return new JobRunner(job, applicationContext);
     }
 }

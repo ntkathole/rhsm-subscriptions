@@ -22,7 +22,7 @@ package org.candlepin.subscriptions.files;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.capacity.files.ProductWhitelist;
 import org.candlepin.subscriptions.util.ApplicationClock;
 

@@ -23,7 +23,7 @@ package org.candlepin.subscriptions.tally;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import org.candlepin.subscriptions.ApplicationProperties;
+import org.candlepin.subscriptions.config.ApplicationProperties;
 import org.candlepin.subscriptions.cloudigrade.ApiException;
 
 import com.google.common.collect.ImmutableMap;

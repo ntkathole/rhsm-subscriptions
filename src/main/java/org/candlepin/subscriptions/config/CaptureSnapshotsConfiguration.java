@@ -18,27 +18,29 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.retention;
+package org.candlepin.subscriptions.config;
 
 import org.candlepin.subscriptions.spring.JobRunner;
+import org.candlepin.subscriptions.tally.job.CaptureSnapshotsJob;
+import org.candlepin.subscriptions.task.queue.TaskProducerConfiguration;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Import;
 
 /**
- * Configuration for the "purge-snapshots" profile.
- *
- * This profile defines a job that removes data that's older than our retention policy.
+ * A class to hold all job related configuration.
  */
 @Configuration
-@Profile("purge-snapshots")
-@ComponentScan(basePackages = "org.candlepin.subscriptions.retention")
-public class PurgeSnapshotsConfiguration {
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enableCaptureSnapshots", havingValue = "true")
+@ComponentScan("org.candlepin.subscriptions.tally.job")
+@Import(TaskProducerConfiguration.class)
+public class CaptureSnapshotsConfiguration {
     @Bean
-    JobRunner jobRunner(PurgeSnapshotsJob job, ApplicationContext applicationContext) {
+    JobRunner jobRunner(CaptureSnapshotsJob job, ApplicationContext applicationContext) {
         return new JobRunner(job, applicationContext);
     }
 }

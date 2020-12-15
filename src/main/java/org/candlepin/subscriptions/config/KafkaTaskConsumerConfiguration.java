@@ -18,16 +18,19 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.task.queue.kafka;
+package org.candlepin.subscriptions.config;
 
+import org.candlepin.subscriptions.task.queue.kafka.KafkaApplicationListener;
+import org.candlepin.subscriptions.task.queue.kafka.KafkaConfiguration;
+import org.candlepin.subscriptions.task.queue.kafka.KafkaConfigurator;
 import org.candlepin.subscriptions.task.queue.kafka.message.TaskMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
@@ -39,11 +42,16 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
  * KafkaTaskProcessor.
  */
 @Configuration
-@Profile("kafka-queue")
+@ConditionalOnProperty(name = "rhsm-subscriptions.feature.enableKafkaQueue", havingValue = "true")
 @Import(KafkaConfiguration.class)
 public class KafkaTaskConsumerConfiguration {
+
+    private final KafkaConfigurator kafkaConfigurator;
+
     @Autowired
-    KafkaConfigurator kafkaConfigurator;
+    public KafkaTaskConsumerConfiguration(KafkaConfigurator kafkaConfigurator) {
+        this.kafkaConfigurator = kafkaConfigurator;
+    }
 
     @Bean
     public KafkaApplicationListener gracefulShutdown() {
