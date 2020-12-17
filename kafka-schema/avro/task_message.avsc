@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "TaskMessage",
-  "namespace": "org.candlepin.subscriptions.task.queue.kafka.message",
+  "namespace": "org.candlepin.subscriptions.a_worker.service.task.queue.kafka.message",
   "fields": [
     {
       "name": "groupId",

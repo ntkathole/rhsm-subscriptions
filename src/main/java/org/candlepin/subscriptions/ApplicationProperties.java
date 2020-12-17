@@ -20,8 +20,8 @@
  */
 package org.candlepin.subscriptions;
 
-import org.candlepin.subscriptions.jobs.JobProperties;
-import org.candlepin.subscriptions.security.AntiCsrfFilter;
+import org.candlepin.subscriptions.a_ashared.config.JobProperties;
+import org.candlepin.subscriptions.a_ashared.config.security.AntiCsrfFilter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

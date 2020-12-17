@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2019 Red Hat, Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Red Hat trademarks are not licensed under GPLv3. No permission is
+ * granted to use or replicate Red Hat trademarks that are incorporated
+ * in this software or its documentation.
+ */
+package org.candlepin.subscriptions.a_worker.tally.collector;
+
+import static org.candlepin.subscriptions.a_worker.tally.collector.Assertions.*;
+import static org.candlepin.subscriptions.a_worker.tally.collector.TestHelper.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.candlepin.subscriptions.a_worker.service.collector.RHELProductUsageCollector;
+import org.candlepin.subscriptions.a_ashared.model.HardwareMeasurementType;
+import org.candlepin.subscriptions.a_ashared.model.HostTallyBucket;
+import org.candlepin.subscriptions.a_ashared.model.ServiceLevel;
+import org.candlepin.subscriptions.a_ashared.model.Usage;
+import org.candlepin.subscriptions.a_worker.service.UsageCalculation;
+import org.candlepin.subscriptions.a_worker.model.NormalizedFacts;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
+
+public class RHELProductUsageCollectorTest {
+
+    private RHELProductUsageCollector collector;
+
+    public RHELProductUsageCollectorTest() {
+        collector = new RHELProductUsageCollector();
+    }
+
+    @Test
+    void testCountsForHypervisor() {
+        NormalizedFacts facts = hypervisorFacts(4, 12);
+
+        UsageCalculation calc = new UsageCalculation(createUsageKey());
+        collector.collect(calc, facts);
+        assertTotalsCalculation(calc, 4, 12, 1);
+        assertPhysicalTotalsCalculation(calc, 4, 12, 1);
+
+        // Expects no hypervisor totals in this case.
+        assertNull(calc.getTotals(HardwareMeasurementType.VIRTUAL));
+    }
+
+    @Test
+    void testCountsForGuestWithKnownHypervisor() {
+        NormalizedFacts facts = guestFacts(3, 12, false);
+
+        UsageCalculation calc = new UsageCalculation(createUsageKey());
+        collector.collect(calc, facts);
+
+        // A guest with a known hypervisor does not contribute to any counts
+        // as they are accounted for by the guest's hypervisor.
+        assertNull(calc.getTotals(HardwareMeasurementType.TOTAL));
+        assertNull(calc.getTotals(HardwareMeasurementType.PHYSICAL));
+        assertNull(calc.getTotals(HardwareMeasurementType.VIRTUAL));
+    }
+
+    @Test
+    void testCountsForGuestWithUnkownHypervisor() {
+        NormalizedFacts facts = guestFacts(3, 12, true);
+
+        UsageCalculation calc = new UsageCalculation(createUsageKey());
+        collector.collect(calc, facts);
+
+        // A guest with an unknown hypervisor contributes to the overall totals
+        // It is considered as having its own unique hypervisor and therefore
+        // contributes its own values to the hypervisor counts.
+        assertTotalsCalculation(calc, 1, 12, 1);
+        assertHypervisorTotalsCalculation(calc, 1, 12, 1);
+        assertNull(calc.getTotals(HardwareMeasurementType.PHYSICAL));
+    }
+
+    @Test
+    void testCountsForPhysicalSystem() {
+        NormalizedFacts facts = physicalNonHypervisor(4, 12);
+
+        UsageCalculation calc = new UsageCalculation(createUsageKey());
+        collector.collect(calc, facts);
+
+        assertTotalsCalculation(calc, 4, 12, 1);
+        assertPhysicalTotalsCalculation(calc, 4, 12, 1);
+        assertNull(calc.getTotals(HardwareMeasurementType.VIRTUAL));
+    }
+
+    @Test
+    void hypervisorReportedWithNoSocketsDefaultToZero() {
+        NormalizedFacts facts = new NormalizedFacts();
+        facts.setHypervisor(true);
+
+        UsageCalculation calc = new UsageCalculation(createUsageKey());
+        collector.collect(calc, facts);
+        Optional<HostTallyBucket> bucket = collector.collectForHypervisor("foo", calc, facts);
+        assertTrue(bucket.isPresent());
+        assertEquals(0, bucket.get().getSockets());
+    }
+
+    @Test
+    void testCountsForCloudProvider() {
+        // Cloud provider host should contribute to the matched supported cloud provider,
+        // as well as the overall total. A cloud host should only ever contribute 1 socket
+        // along with its cores.
+        NormalizedFacts facts = cloudMachineFacts(HardwareMeasurementType.AWS, 4, 12);
+
+        UsageCalculation calc = new UsageCalculation(createUsageKey());
+        collector.collect(calc, facts);
+
+        assertTotalsCalculation(calc, 1, 12, 1);
+        assertHardwareMeasurementTotals(calc, HardwareMeasurementType.AWS, 1, 12, 1);
+        assertNullExcept(calc, HardwareMeasurementType.TOTAL, HardwareMeasurementType.AWS);
+    }
+
+    private UsageCalculation.Key createUsageKey() {
+        return new UsageCalculation.Key("RHEL", ServiceLevel.EMPTY, Usage.EMPTY);
+    }
+
+}

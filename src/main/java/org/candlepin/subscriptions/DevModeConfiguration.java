@@ -41,9 +41,8 @@ import javax.annotation.PostConstruct;
 @Configuration
 @EnableScheduling
 @ConditionalOnProperty(prefix = "rhsm-subscriptions", name = "dev-mode", havingValue = "true")
-@ComponentScan({
-    "org.candlepin.subscriptions.tally.job", // for the tally job
-    "org.candlepin.subscriptions.retention" // for the retention job
+@ComponentScan({ "org.candlepin.subscriptions.a_worker.job", // for the tally job
+    "org.candlepin.subscriptions.a_worker.retention" // for the retention job
 })
 public class DevModeConfiguration {
 

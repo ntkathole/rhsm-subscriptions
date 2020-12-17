@@ -20,15 +20,15 @@
  */
 package org.candlepin.subscriptions;
 
-import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
-import org.candlepin.subscriptions.resource.ApiConfiguration;
-import org.candlepin.subscriptions.retention.PurgeSnapshotsConfiguration;
-import org.candlepin.subscriptions.security.SecurityConfig;
-import org.candlepin.subscriptions.tally.TallyWorkerConfiguration;
-import org.candlepin.subscriptions.tally.job.CaptureSnapshotsConfiguration;
-import org.candlepin.subscriptions.util.ApplicationClock;
-import org.candlepin.subscriptions.util.HawtioConfiguration;
-import org.candlepin.subscriptions.util.LiquibaseUpdateOnlyConfiguration;
+import org.candlepin.subscriptions.a_capacityingress.CapacityIngressConfiguration;
+import org.candlepin.subscriptions.a_publicapi.ApiConfiguration;
+import org.candlepin.subscriptions.a_worker.config.PurgeSnapshotsConfiguration;
+import org.candlepin.subscriptions.a_ashared.config.security.SecurityConfig;
+import org.candlepin.subscriptions.a_worker.config.TallyWorkerConfiguration;
+import org.candlepin.subscriptions.a_worker.config.CaptureSnapshotsConfiguration;
+import org.candlepin.subscriptions.a_worker.util.ApplicationClock;
+import org.candlepin.subscriptions.a_worker.config.HawtioConfiguration;
+import org.candlepin.subscriptions.a_ashared.config.LiquibaseUpdateOnlyConfiguration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
