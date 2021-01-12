@@ -20,6 +20,13 @@
  */
 package org.candlepin.subscriptions.tally.facts;
 
+import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.candlepin.subscriptions.ApplicationProperties;
 import org.candlepin.subscriptions.db.model.HardwareMeasurementType;
 import org.candlepin.subscriptions.db.model.HostHardwareType;
@@ -29,18 +36,9 @@ import org.candlepin.subscriptions.files.ProductIdToProductsMapSource;
 import org.candlepin.subscriptions.inventory.db.model.InventoryHostFacts;
 import org.candlepin.subscriptions.tally.files.RoleToProductsMapSource;
 import org.candlepin.subscriptions.util.ApplicationClock;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
-
-import java.io.IOException;
-import java.time.OffsetDateTime;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 
 /**
@@ -80,6 +78,20 @@ public class FactNormalizer {
 
         NormalizedFacts normalizedFacts = new NormalizedFacts();
         normalizeClassification(normalizedFacts, hostFacts, reportedHypervisors);
+        normalizeSystemProfileFacts(normalizedFacts, hostFacts);
+        normalizeRhsmFacts(normalizedFacts, hostFacts);
+        normalizeQpcFacts(normalizedFacts, hostFacts);
+        normalizeSocketCount(normalizedFacts, hostFacts);
+        normalizeConflictingOrMissingRhelVariants(normalizedFacts);
+        pruneProducts(normalizedFacts);
+        normalizeUnits(normalizedFacts, hostFacts);
+        return normalizedFacts;
+    }
+
+    public NormalizedFacts normalizedFacts(InventoryHostFacts hostFacts,
+        Map<String, String> validHypervisors, Map<String, String> invalidHypervisors) {
+        NormalizedFacts normalizedFacts = new NormalizedFacts();
+        normalizeClassification(normalizedFacts, hostFacts, validHypervisors, invalidHypervisors);
         normalizeSystemProfileFacts(normalizedFacts, hostFacts);
         normalizeRhsmFacts(normalizedFacts, hostFacts);
         normalizeQpcFacts(normalizedFacts, hostFacts);
@@ -135,6 +147,35 @@ public class FactNormalizer {
         normalizedFacts.setHypervisorUnknown(isHypervisorUnknown);
         normalizedFacts.setHardwareType(determineHardwareType(hostFacts));
     }
+
+    private void normalizeClassification(NormalizedFacts normalizedFacts,
+        InventoryHostFacts hostFacts, Map<String, String> validHypervisors,
+        Map<String, String> invalidHypervisors) {
+            boolean isVirtual = isVirtual(hostFacts);
+
+            String hypervisorUuid = hostFacts.getSatelliteHypervisorUuid();
+            if (!StringUtils.hasText(hypervisorUuid)) {
+                hypervisorUuid = hostFacts.getHypervisorUuid();
+            }
+            if (StringUtils.hasText(hypervisorUuid)) {
+                normalizedFacts.setHypervisorUuid(hypervisorUuid);
+            }
+
+            //TODO check against invalid hypervisors and set the invalid hypervisors flag
+
+        boolean isHypervisorUnknown = (isVirtual && !StringUtils.hasText(hypervisorUuid)) ||
+            invalidHypervisors.getOrDefault(hypervisorUuid, null) == null
+            || validHypervisors.getOrDefault(hypervisorUuid, null) == null;
+
+        boolean isHypervisor = StringUtils.hasText(hostFacts.getSubscriptionManagerId()) &&
+            invalidHypervisors.containsKey(hostFacts.getSubscriptionManagerId());
+
+            normalizedFacts.setHypervisor(isHypervisor);
+            normalizedFacts.setVirtual(isVirtual);
+            normalizedFacts.setHypervisorUnknown(isHypervisorUnknown);
+            normalizedFacts.setHardwareType(determineHardwareType(hostFacts));
+    }
+
 
     private HostHardwareType determineHardwareType(InventoryHostFacts facts) {
         HostHardwareType hardwareType;

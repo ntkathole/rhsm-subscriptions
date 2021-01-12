@@ -20,6 +20,15 @@
  */
 package org.candlepin.subscriptions.tally;
 
+import com.google.common.collect.Maps;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 import org.candlepin.subscriptions.ApplicationProperties;
 import org.candlepin.subscriptions.db.HostRepository;
 import org.candlepin.subscriptions.db.model.Host;
@@ -31,21 +40,11 @@ import org.candlepin.subscriptions.tally.collector.ProductUsageCollector;
 import org.candlepin.subscriptions.tally.collector.ProductUsageCollectorFactory;
 import org.candlepin.subscriptions.tally.facts.FactNormalizer;
 import org.candlepin.subscriptions.tally.facts.NormalizedFacts;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Collects the max values from all accounts in the inventory.
@@ -81,7 +80,9 @@ public class InventoryAccountUsageCollector {
         int deleted = hostRepository.deleteByAccountNumberIn(accounts);
         log.info("Deleted {} existing Host records.", deleted);
 
-        Map<String, String> hypMapping = new HashMap<>();
+        Map<String, String> validHypervisors = new HashMap<>();
+        Map<String, String> invalidHypervisors = new HashMap<>();
+        Map<String, String> reportedHypervisors = new HashMap<>();
         Map<String, Set<UsageCalculation.Key>> hypervisorUsageKeys = new HashMap<>();
         Map<String, Map<String, NormalizedFacts>> accountHypervisorFacts = new HashMap<>();
         Map<String, Host> hypervisorHosts = new HashMap<>();
@@ -90,13 +91,25 @@ public class InventoryAccountUsageCollector {
         Consumer<Object[]> addToHypervisorMap = resultRow -> {
             final int hypIdIndex = 0;
             final int hypSubmanIdIndex = 1;
+            final int validityStatusIndex = 2;
+
             String k = (String) resultRow[hypIdIndex];
             String v = (String) resultRow[hypSubmanIdIndex];
-            hypMapping.put(k, v);
+
+            if ("invalid".equalsIgnoreCase((String) resultRow[validityStatusIndex])) {
+                invalidHypervisors.put(k, v);
+            } else {
+                validHypervisors.put(k, v);
+            }
         };
 
         inventory.reportedHypervisors(accounts, addToHypervisorMap);
-        log.info("Found {} reported hypervisors.", hypMapping.size());
+
+        //TODO delete if unused
+        reportedHypervisors.putAll(validHypervisors);
+        reportedHypervisors.putAll(invalidHypervisors);
+
+        log.info("Found {} reported hypervisors.", validHypervisors.size());
 
         Map<String, AccountUsageCalculation> calcsByAccount = new HashMap<>();
         inventory.processHostFacts(accounts, culledOffsetDays,
@@ -106,7 +119,7 @@ public class InventoryAccountUsageCollector {
                 calcsByAccount.putIfAbsent(account, new AccountUsageCalculation(account));
 
                 AccountUsageCalculation accountCalc = calcsByAccount.get(account);
-                NormalizedFacts facts = factNormalizer.normalize(hostFacts, hypMapping);
+                NormalizedFacts facts = factNormalizer.normalize(hostFacts, validHypervisors);
 
                 // Validate and set the owner.
                 // Don't set null owner as it may overwrite an existing value.

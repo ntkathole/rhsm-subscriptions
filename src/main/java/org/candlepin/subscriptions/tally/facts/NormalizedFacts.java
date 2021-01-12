@@ -50,9 +50,22 @@ public class NormalizedFacts {
     private String hypervisorUuid;
     private boolean isVirtual;
     private boolean isHypervisor;
+
+    public boolean isHasValidHypervisor() {
+        return hasValidHypervisor;
+    }
+
+    public void setHasValidHypervisor(boolean hasValidHypervisor) {
+        this.hasValidHypervisor = hasValidHypervisor;
+    }
+
+    private boolean hasValidHypervisor;
     private boolean isHypervisorUnknown;
     private HostHardwareType hardwareType;
     private HardwareMeasurementType cloudProviderType;
+
+
+
 
     public NormalizedFacts() {
         products = new HashSet<>();

@@ -52,7 +52,8 @@ public interface InventoryRepository extends Repository<InventoryHost, UUID> {
      * @return a stream of Object[] with each entry representing a hypervisor mapping. Each Object[]
      * represents a row of the result set
      */
-    @Query(nativeQuery = true, value = "select hyp_id, hyp_subman_id " +
+    @Query(nativeQuery = true, value = "select hyp_id, hyp_subman_id, " +
+        "CASE WHEN sockets = '0' THEN 'invalid' END " +
         "from (" +
         "           select distinct h.facts -> 'rhsm' ->> 'VM_HOST_UUID' as hyp_id," +
         "           h_.canonical_facts ->> 'subscription_manager_id' as hyp_subman_id," +
@@ -65,7 +66,6 @@ public interface InventoryRepository extends Repository<InventoryHost, UUID> {
         "           jsonb_extract_path (h_.system_profile_facts, 'number_of_sockets') as sockets" +
         "           from hosts h left outer join hosts h_ on h.facts -> 'satellite' ->> 'virtual_host_uuid' = h_.canonical_facts ->> 'subscription_manager_id'" +
         "           where h.facts -> 'satellite' -> 'virtual_host_uuid' is not null and h.account IN (:accounts)" +
-        "   ) as validHypTbl" +
-        "   where sockets <> '0'")
+        "   ) as validHypTbl")
     Stream<Object[]> getReportedHypervisors(@Param("accounts") Collection<String> accounts);
 }

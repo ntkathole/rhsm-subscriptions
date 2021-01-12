@@ -56,7 +56,7 @@ public class RHELProductUsageCollector implements ProductUsageCollector {
             return Optional.of(createBucket(prodCalc, true, appliedCores, appliedSockets,
                 normalizedFacts.getCloudProviderType()));
         }
-        else if (guestWithUnknownHypervisor) {
+        else if (guestWithUnknownHypervisor || normalizedFacts.isHasValidHypervisor()) {
             // If the hypervisor is unknown for a guest, we consider it as having a
             // unique hypervisor instance contributing to the hypervisor counts.
             // Since the guest is unmapped, we only contribute a single socket.
