@@ -23,8 +23,7 @@ package org.candlepin.subscriptions;
 import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
 import org.candlepin.subscriptions.conduit.ConduitConfiguration;
 import org.candlepin.subscriptions.conduit.job.OrgSyncConfiguration;
-import org.candlepin.subscriptions.metering.job.MeteringJobConfiguration;
-import org.candlepin.subscriptions.metering.worker.MeteringWorkerConfiguration;
+import org.candlepin.subscriptions.metering.MeteringConfiguration;
 import org.candlepin.subscriptions.resource.ApiConfiguration;
 import org.candlepin.subscriptions.retention.PurgeSnapshotsConfiguration;
 import org.candlepin.subscriptions.security.SecurityConfig;
@@ -64,7 +63,7 @@ import javax.validation.Validator;
     CaptureSnapshotsConfiguration.class, PurgeSnapshotsConfiguration.class,
     LiquibaseUpdateOnlyConfiguration.class, TallyWorkerConfiguration.class, OrgSyncConfiguration.class,
     DevModeConfiguration.class, SecurityConfig.class, HawtioConfiguration.class,
-    MeteringWorkerConfiguration.class, MeteringJobConfiguration.class
+    MeteringConfiguration.class
 })
 public class ApplicationConfiguration implements WebMvcConfigurer {
     @Bean

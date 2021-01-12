@@ -18,7 +18,7 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.metering.tasks;
+package org.candlepin.subscriptions.metering.service.prometheus.task;
 
 import org.candlepin.subscriptions.db.AccountListSource;
 import org.candlepin.subscriptions.tally.AccountListSourceException;
@@ -44,9 +44,9 @@ import javax.transaction.Transactional;
  * Produces task messages related to pulling metrics back from Telemeter.
  */
 @Component
-public class MetricsTaskManager {
+public class PrometheusMetricsTaskManager {
 
-    private static final Logger log = LoggerFactory.getLogger(MetricsTaskManager.class);
+    private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsTaskManager.class);
 
     private String topic;
 
@@ -54,7 +54,7 @@ public class MetricsTaskManager {
 
     private AccountListSource accountListSource;
 
-    public MetricsTaskManager(TaskQueue queue,
+    public PrometheusMetricsTaskManager(TaskQueue queue,
         @Qualifier("meteringTaskQueueProperties") TaskQueueProperties queueProps,
         AccountListSource accountListSource) {
         log.info("Initializing metering manager. Topic: {}", queueProps.getTopic());
@@ -84,7 +84,7 @@ public class MetricsTaskManager {
 
     private TaskDescriptor createOpenshiftMetricsTask(String account, OffsetDateTime start,
         OffsetDateTime end) {
-        log.info("ACCOUNT: {} START: {} END: {}", account, start, end);
+        log.debug("ACCOUNT: {} START: {} END: {}", account, start, end);
         TaskDescriptorBuilder builder = TaskDescriptor.builder(TaskType.OPENSHIFT_METRICS_COLLECTION, topic)
             .setSingleValuedArg("account", account)
             .setSingleValuedArg("start", start.toString());

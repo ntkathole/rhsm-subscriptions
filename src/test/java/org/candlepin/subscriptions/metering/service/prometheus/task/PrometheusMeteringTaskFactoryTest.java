@@ -18,14 +18,22 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.metering.tasks;
+package org.candlepin.subscriptions.metering.service.prometheus.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
-import org.candlepin.subscriptions.metering.MeteringController;
+import org.candlepin.subscriptions.FixedClockConfiguration;
+import org.candlepin.subscriptions.metering.service.prometheus.PrometheusMeteringController;
+import org.candlepin.subscriptions.metering.task.OpenShiftMetricsTask;
+import org.candlepin.subscriptions.task.Task;
 import org.candlepin.subscriptions.task.TaskDescriptor;
 import org.candlepin.subscriptions.task.TaskType;
+import org.candlepin.subscriptions.util.ApplicationClock;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,18 +41,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.OffsetDateTime;
+
 
 @ExtendWith(MockitoExtension.class)
-public class MeteringTaskFactoryTest {
+public class PrometheusMeteringTaskFactoryTest {
 
     @Mock
-    private MeteringController controller;
+    private PrometheusMeteringController controller;
 
-    private MeteringTaskFactory factory;
+    private PrometheusMeteringTaskFactory factory;
 
     @BeforeEach
     void before() {
-        this.factory = new MeteringTaskFactory(controller);
+        this.factory = new PrometheusMeteringTaskFactory(controller);
     }
 
     @Test
@@ -55,15 +65,24 @@ public class MeteringTaskFactoryTest {
     }
 
     @Test
-    void testOpenshiftMetricsTaskCreation() {
-        factory.build(
+    void testOpenshiftMetricsTaskCreation() throws Exception {
+        ApplicationClock clock = new FixedClockConfiguration().fixedClock();
+        OffsetDateTime end = clock.now();
+        OffsetDateTime start = end.minusDays(1);
+
+        Task task = factory.build(
             TaskDescriptor.builder(TaskType.OPENSHIFT_METRICS_COLLECTION, "a-group")
             .setSingleValuedArg("account", "12234")
-            .setSingleValuedArg("start", "2018-03-20T09:12:28Z")
-            .setSingleValuedArg("end", "2018-03-20T09:12:28Z")
-            .setSingleValuedArg("step", "1h")
+            .setSingleValuedArg("start", start.toString())
+            .setSingleValuedArg("end", end.toString())
             .build()
         );
+        assertNotNull(task);
+        assertTrue(task instanceof OpenShiftMetricsTask);
+
+        task.execute();
+        verify(controller).reportOpenshiftMetrics(eq("12234"), eq(start), eq(end));
+
     }
 
     @Test

@@ -18,9 +18,10 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.metering.tasks;
+package org.candlepin.subscriptions.metering.service.prometheus.task;
 
-import org.candlepin.subscriptions.metering.MeteringController;
+import org.candlepin.subscriptions.metering.service.prometheus.PrometheusMeteringController;
+import org.candlepin.subscriptions.metering.task.OpenShiftMetricsTask;
 import org.candlepin.subscriptions.task.Task;
 import org.candlepin.subscriptions.task.TaskDescriptor;
 import org.candlepin.subscriptions.task.TaskFactory;
@@ -33,11 +34,11 @@ import java.time.OffsetDateTime;
 /**
  * Creates metering related Tasks.
  */
-public class MeteringTaskFactory implements TaskFactory {
+public class PrometheusMeteringTaskFactory implements TaskFactory {
 
-    private final MeteringController controller;
+    private final PrometheusMeteringController controller;
 
-    public MeteringTaskFactory(MeteringController controller) {
+    public PrometheusMeteringTaskFactory(PrometheusMeteringController controller) {
         this.controller = controller;
     }
 
@@ -51,7 +52,7 @@ public class MeteringTaskFactory implements TaskFactory {
                 OffsetDateTime start = validateDate(taskDescriptor, "start");
                 OffsetDateTime end = validateDate(taskDescriptor, "end");
 
-                return new OpenshiftMetricsTask(controller, account, start, end);
+                return new OpenShiftMetricsTask(controller, account, start, end);
             default:
                 throw new IllegalArgumentException("Could not build task. Unknown task type: " +
                     taskDescriptor.getTaskType());
