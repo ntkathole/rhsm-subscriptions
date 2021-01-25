@@ -109,7 +109,7 @@ allprojects {
     }
 
     checkstyle {
-        toolVersion "8.16"
+        toolVersion = "8.39"
     }
 
     jacocoTestReport {
@@ -271,7 +271,9 @@ project(":api") {
     apply plugin: "org.openapi.generator"
 
     // This project should only contain generated code.  No point in running checkstyle
-    checkstyle.sourceSets = []
+    checkstyle {
+        sourceSets = []
+    }
 
     ext {
         api_spec_path = "${projectDir}/rhsm-subscriptions-api-spec.yaml"
@@ -389,10 +391,11 @@ project(":cloudigrade-client") {
 
 configure(subprojects.findAll { it.name in ["cloudigrade-client", 'rbac-client', 'rhsm-client', 'insights-inventory-client']}) {
     apply plugin: "org.openapi.generator"
-    apply plugin: "checkstyle"
 
     // These projects should only contain generated code.  No point in running checkstyle.
-    checkstyle.sourceSets = []
+    checkstyle {
+        sourceSets = []
+    }
 
     openApiValidate {
         inputSpec = api_spec_path
