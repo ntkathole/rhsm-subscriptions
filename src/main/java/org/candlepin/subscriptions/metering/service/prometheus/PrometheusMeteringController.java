@@ -22,6 +22,7 @@ package org.candlepin.subscriptions.metering.service.prometheus;
 
 import org.candlepin.subscriptions.db.AccountConfigRepository;
 import org.candlepin.subscriptions.db.model.EventKey;
+import org.candlepin.subscriptions.db.model.EventRecord;
 import org.candlepin.subscriptions.db.model.config.OptInType;
 import org.candlepin.subscriptions.event.EventController;
 import org.candlepin.subscriptions.json.Event;
@@ -98,6 +99,7 @@ public class PrometheusMeteringController {
                     true, true);
 
                 log.info("Collecting OpenShift metrics");
+
                 QueryResult metricData = prometheusService.runRangeQuery(
                     // Substitute the account number into the query. The query is expected to
                     // contain %s for replacement.
@@ -114,7 +116,7 @@ public class PrometheusMeteringController {
                     );
                 }
 
-                Map<EventKey, Event> existing = eventController.mapEventsInTimeRange(
+                Map<EventKey, EventRecord> existing = eventController.mapEventsInTimeRange(
                     account,
                     MeteringEventFactory.OPENSHIFT_CLUSTER_EVENT_SOURCE,
                     MeteringEventFactory.OPENSHIFT_CLUSTER_EVENT_TYPE,
@@ -125,7 +127,7 @@ public class PrometheusMeteringController {
                 );
                 log.debug("Found {} existing events.", existing.size());
 
-                Map<EventKey, Event> events = new HashMap<>();
+                Map<EventKey, EventRecord> events = new HashMap<>();
                 for (QueryResultDataResult r : metricData.getData().getResult()) {
                     Map<String, String> labels = r.getMetric();
                     String clusterId = labels.get("_id");
@@ -150,9 +152,9 @@ public class PrometheusMeteringController {
                         OffsetDateTime eventDate =
                             eventTermDate.minusSeconds(metricProperties.getOpenshift().getStep());
 
-                        Event event = createOrUpdateEvent(existing, account, clusterId, sla, usage, role,
-                            eventDate, eventTermDate, value);
-                        events.put(EventKey.fromEvent(event), event);
+                        EventRecord eventRecord = createOrUpdateEvent(existing, account, clusterId, sla,
+                            usage, role, eventDate, eventTermDate, value);
+                        events.put(EventKey.fromEventRecord(eventRecord), eventRecord);
                     }
                 }
 
@@ -172,7 +174,7 @@ public class PrometheusMeteringController {
     }
 
     @SuppressWarnings("java:S107")
-    private Event createOrUpdateEvent(Map<EventKey, Event> existing, String account, String instanceId,
+    private EventRecord createOrUpdateEvent(Map<EventKey, EventRecord> existing, String account, String instanceId,
         String sla, String usage, String role, OffsetDateTime measuredDate, OffsetDateTime expired,
         BigDecimal value) {
         EventKey lookupKey = new EventKey(
@@ -183,16 +185,16 @@ public class PrometheusMeteringController {
             measuredDate
         );
 
-        Event event = existing.remove(lookupKey);
-        if (event == null) {
-            event = new Event();
+        EventRecord eventRecord = existing.remove(lookupKey);
+        if (eventRecord == null) {
+            eventRecord = new EventRecord();
         }
-        MeteringEventFactory.updateOpenShiftClusterCores(event, account, instanceId, sla, usage, role,
+        MeteringEventFactory.updateOpenShiftClusterCores(eventRecord, account, instanceId, sla, usage, role,
             measuredDate, expired, value.doubleValue());
-        return event;
+        return eventRecord;
     }
 
-    private void deleteStaleEvents(Collection<Event> toDelete) {
+    private void deleteStaleEvents(Collection<EventRecord> toDelete) {
         if (!toDelete.isEmpty()) {
             log.info("Deleting {} stale OpenShift metric events.", toDelete.size());
             eventController.deleteEvents(toDelete);

@@ -63,6 +63,11 @@ public class EventKey {
             event.getInstanceId(), event.getTimestamp());
     }
 
+    public static EventKey fromEventRecord(EventRecord record) {
+        return new EventKey(record.getAccountNumber(), record.getEventSource(), record.getEventType(),
+            record.getEvent().getInstanceId(), record.getTimestamp());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

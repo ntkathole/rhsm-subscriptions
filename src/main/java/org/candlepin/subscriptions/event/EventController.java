@@ -66,13 +66,12 @@ public class EventController {
     }
 
     @SuppressWarnings({"linelength", "indentation"})
-    public Map<EventKey, Event> mapEventsInTimeRange(String accountNumber, String eventSource,
+    public Map<EventKey, EventRecord> mapEventsInTimeRange(String accountNumber, String eventSource,
         String eventType, OffsetDateTime begin, OffsetDateTime end) {
         return repo
             .findByAccountNumberAndEventSourceAndEventTypeAndTimestampGreaterThanEqualAndTimestampLessThanOrderByTimestamp(
                 accountNumber, eventSource, eventType, begin, end)
-            .map(EventRecord::getEvent)
-            .collect(Collectors.toMap(EventKey::fromEvent, Function.identity()));
+            .collect(Collectors.toMap(EventKey::fromEventRecord, Function.identity()));
     }
 
     /**
@@ -93,8 +92,8 @@ public class EventController {
      * @param events the event JSON objects to save.
      */
     @Transactional
-    public void saveAll(Collection<Event> events) {
-        repo.saveAll(events.stream().map(EventRecord::new).collect(Collectors.toList()));
+    public void saveAll(Collection<EventRecord> events) {
+        repo.saveAll(events);
     }
 
     /**
@@ -114,7 +113,7 @@ public class EventController {
     }
 
     @Transactional
-    public void deleteEvents(Collection<Event> toDelete) {
-        repo.deleteInBatch(toDelete.stream().map(EventRecord::new).collect(Collectors.toList()));
+    public void deleteEvents(Collection<EventRecord> toDelete) {
+        repo.deleteInBatch(toDelete);
     }
 }

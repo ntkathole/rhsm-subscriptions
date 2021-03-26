@@ -20,6 +20,7 @@
  */
 package org.candlepin.subscriptions.metering;
 
+import org.candlepin.subscriptions.db.model.EventRecord;
 import org.candlepin.subscriptions.json.Event;
 import org.candlepin.subscriptions.json.Event.Role;
 import org.candlepin.subscriptions.json.Event.Sla;
@@ -65,20 +66,21 @@ public class MeteringEventFactory {
      * @return a populated Event instance.
      */
     @SuppressWarnings("java:S107")
-    public static Event openShiftClusterCores(String accountNumber, String clusterId, String serviceLevel,
+    public static EventRecord openShiftClusterCores(String accountNumber, String clusterId,
+        String serviceLevel,
         String usage, String role, OffsetDateTime measuredTime, OffsetDateTime expired,
         Double measuredValue) {
-        Event event = new Event();
-        updateOpenShiftClusterCores(event, accountNumber, clusterId, serviceLevel, usage, role,
+        EventRecord eventRecord = new EventRecord();
+        updateOpenShiftClusterCores(eventRecord, accountNumber, clusterId, serviceLevel, usage, role,
             measuredTime, expired, measuredValue);
-        return event;
+        return eventRecord;
     }
 
     @SuppressWarnings("java:S107")
-    public static void updateOpenShiftClusterCores(Event toUpdate, String accountNumber, String clusterId,
+    public static void updateOpenShiftClusterCores(EventRecord record, String accountNumber, String clusterId,
         String serviceLevel, String usage, String role, OffsetDateTime measuredTime, OffsetDateTime expired,
         Double measuredValue) {
-        toUpdate
+        Event toUpdate = new Event()
             .withEventSource(OPENSHIFT_CLUSTER_EVENT_SOURCE)
             .withEventType(OPENSHIFT_CLUSTER_EVENT_TYPE)
             .withServiceType(OPENSHIFT_CLUSTER_SERVICE_TYPE)
@@ -91,6 +93,7 @@ public class MeteringEventFactory {
             .withUsage(getUsage(usage, accountNumber, clusterId))
             .withMeasurements(List.of(new Measurement().withUom(Uom.CORES).withValue(measuredValue)))
             .withRole(getRole(role, accountNumber, clusterId));
+        record.setEvent(toUpdate);
     }
 
     private static Sla getSla(String serviceLevel, String account, String clusterId) {
