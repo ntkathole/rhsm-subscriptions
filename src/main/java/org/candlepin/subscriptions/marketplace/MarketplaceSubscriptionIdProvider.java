@@ -87,14 +87,15 @@ public class MarketplaceSubscriptionIdProvider {
         ProductProfile profile = profileRegistry.findProfileForSwatchProductId(productId);
         Set<String> roles = profile.getRolesBySwatchProduct().getOrDefault(productId, Collections.emptySet());
 
-        List<Subscription> result = fetchSubscriptions(accountNumber, usageKey, roles, rangeStart, rangeEnd);
+        List<Subscription> result = lookupSubscriptions(accountNumber, usageKey, roles, rangeStart, rangeEnd);
 
         if (result.isEmpty()) {
             /* If we are missing the subscription, call out to the MarketplaceSubscriptionCollector
                to fetch from Marketplace.  Sync all those subscriptions. Query again. */
             var subscriptions = collector.fetchSubscription(accountNumber, usageKey);
+            assert subscriptions != null;
             subscriptions.forEach(syncController::syncSubscription);
-            result = fetchSubscriptions(accountNumber, usageKey, roles, rangeStart, rangeEnd);
+            result = lookupSubscriptions(accountNumber, usageKey, roles, rangeStart, rangeEnd);
         }
 
         if (result.isEmpty()) {
@@ -112,7 +113,7 @@ public class MarketplaceSubscriptionIdProvider {
         return Optional.of(result.get(0).getMarketplaceSubscriptionId());
     }
 
-    protected List<Subscription> fetchSubscriptions(String accountNumber, Key usageKey, Set<String> roles,
+    protected List<Subscription> lookupSubscriptions(String accountNumber, Key usageKey, Set<String> roles,
         OffsetDateTime rangeStart, OffsetDateTime rangeEnd) {
         List<Subscription> result =
             subscriptionRepo.findSubscriptionByAccountAndUsageKey(accountNumber, usageKey, roles);

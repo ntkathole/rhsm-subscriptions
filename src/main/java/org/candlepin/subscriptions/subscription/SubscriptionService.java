@@ -23,14 +23,17 @@ package org.candlepin.subscriptions.subscription;
 import org.candlepin.subscriptions.subscription.api.model.Subscription;
 import org.candlepin.subscriptions.subscription.api.resources.SearchApi;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The Subscription Service wrapper for all subscription service interfaces.
  */
-@Component
+@Service
 public class SubscriptionService {
 
     private final SearchApi searchApi;
@@ -50,16 +53,46 @@ public class SubscriptionService {
     }
 
     /**
-     * Obtain Subscription Service Subscription Models for an orgId.
+     * Obtain Subscription Service Subscription Models for an account number.  Will attempt to gather "all"
+     * pages and combine them.
+     *
+     * @param accountNumber the account number of the customer. Also refered to as the Oracle account number.
+     * @return a list of Subscription models.
+     * @throws ApiException if an error occurs in fulfilling this request.
+     */
+    public List<Subscription> getSubscriptionsByAccountNumber(String accountNumber) throws ApiException {
+
+        var index = 0;
+        var pageSize = 1;
+        int latestResultCount;
+
+        //TODO how do deal with possibility of new subscriptions getting added while looping? eventual
+        // consistency?
+        Set<Subscription> total = new HashSet<>();
+        do {
+            List<Subscription> subscriptionsByAccountNumber = getSubscriptionsByAccountNumber("123", index,
+                pageSize);
+            latestResultCount = subscriptionsByAccountNumber.size();
+            total.addAll(subscriptionsByAccountNumber);
+            index = index + pageSize;
+        } while (latestResultCount != 0);
+
+        return new ArrayList<>(total);
+    }
+
+    /**
+     * Obtain Subscription Service Subscription Models for an account number.
      * @param accountNumber the account number of the customer. Also refered to as the Oracle account number.
      * @param index the starting index for results.
      * @param pageSize the number of results in the page.
      * @return a list of Subscription models.
      * @throws ApiException if an error occurs in fulfilling this request.
      */
-    public List<Subscription> getSubscriptionsByAccountNumber(String accountNumber, int index, int pageSize)
-        throws ApiException {
+    protected List<Subscription> getSubscriptionsByAccountNumber(String accountNumber, int index,
+        int pageSize) throws ApiException {
+
         return searchApi.searchSubscriptionsByAccountNumber(accountNumber, index, pageSize);
+
     }
 
     /**

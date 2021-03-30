@@ -20,14 +20,14 @@
  */
 package org.candlepin.subscriptions.marketplace;
 
-import org.candlepin.subscriptions.marketplace.api.resources.MarketplaceApi;
+import org.candlepin.subscriptions.subscription.ApiException;
+import org.candlepin.subscriptions.subscription.SubscriptionService;
 import org.candlepin.subscriptions.subscription.api.model.Subscription;
 import org.candlepin.subscriptions.tally.UsageCalculation.Key;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -35,17 +35,22 @@ import java.util.List;
  */
 @Component
 public class MarketplaceSubscriptionCollector {
-    @SuppressWarnings("java:S1068") // Unused field; Remove after implementing
-    private final MarketplaceApi marketplaceApi;
+
+    private final SubscriptionService subscriptionService;
 
     @Autowired
-    public MarketplaceSubscriptionCollector(MarketplaceApi marketplaceApi,
-        MarketplaceProperties properties) {
-        this.marketplaceApi = marketplaceApi;
+    public MarketplaceSubscriptionCollector(SubscriptionService subscriptionService) {
+        this.subscriptionService = subscriptionService;
     }
 
-    @SuppressWarnings("java:S1172") // Unused parameters; remove after implementing
-    public List<Subscription> fetchSubscription(String orgId, Key usageKey) {
-        return Collections.emptyList();
+    public List<Subscription> fetchSubscription(String accountId, Key usageKey) {
+        try {
+            return subscriptionService.getSubscriptionsByAccountNumber(accountId);
+        }
+        catch (ApiException e) {
+            //TODO
+            e.printStackTrace();
+            throw new RuntimeException("API exception getting subscriptions");
+        }
     }
 }
