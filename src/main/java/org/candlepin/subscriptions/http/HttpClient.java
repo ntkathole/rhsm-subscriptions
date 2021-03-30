@@ -26,6 +26,11 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.factory.ApacheHttpClient4EngineFactory;
 import org.jboss.resteasy.client.jaxrs.internal.ClientConfiguration;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -36,6 +41,7 @@ import java.security.KeyStore;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -83,7 +89,7 @@ public class HttpClient {
         return ((ResteasyClientBuilder) clientBuilder).httpEngine(engine).build();
     }
 
-    private static SSLContext getSslContextFromKeystore(HttpClientProperties serviceProperties) {
+    public static SSLContext getSslContextFromKeystore(HttpClientProperties serviceProperties) {
         final File keyStoreFile = serviceProperties.getKeystore();
         final char[] keyStorePassword;
         if (serviceProperties.getKeystorePassword() == null) {
@@ -116,6 +122,57 @@ public class HttpClient {
         else {
             throw new IllegalStateException(String.format("Keystore file %s is not visible!",
                 keyStoreFile.getAbsolutePath()));
+        }
+    }
+
+    public static WebClient buildWebClient(HttpClientProperties serviceProperties) throws SSLException {
+        final File keyStoreFile = serviceProperties.getKeystore();
+        final char[] keyStorePassword;
+        if (serviceProperties.getKeystorePassword() == null) {
+            keyStorePassword = "".toCharArray();
+        }
+        else {
+            keyStorePassword = serviceProperties.getKeystorePassword();
+        }
+
+        if (keyStoreFile.exists() && keyStoreFile.canRead()) {
+            try (final BufferedInputStream bufferedInputStream = new BufferedInputStream(
+                new FileInputStream(keyStoreFile))) {
+                final KeyStore store = KeyStore.getInstance("JKS");
+                store.load(bufferedInputStream, keyStorePassword);
+                final KeyManagerFactory kmf = KeyManagerFactory
+                    .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                kmf.init(store, keyStorePassword);
+
+                final TrustManagerFactory tmf = TrustManagerFactory
+                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init((KeyStore) null);
+
+                final SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                //TODO only difference WebClient needs the key manager & trust manager, in addtion to the ssl
+                // context
+                // provider.  Should refactor this class to eliminate duplicate code
+                SslContext sslContext = SslContextBuilder.forClient().keyManager(kmf).trustManager(tmf)
+                    .sslContextProvider(ctx.getProvider()).build();
+
+                var httpClient = reactor.netty.http.client.HttpClient.create()
+                    .secure(t -> t.sslContext(sslContext));
+                var webClient = WebClient.builder()
+                    .clientConnector(new ReactorClientHttpConnector(httpClient)).build();
+
+                return webClient;
+            }
+            catch (IOException | GeneralSecurityException e) {
+                throw new IllegalStateException(String
+                    .format("Keystore file %s could not be accessed! %s", keyStoreFile.getAbsolutePath(),
+                        e.getMessage()));
+            }
+        }
+        else {
+            throw new IllegalStateException(
+                String.format("Keystore file %s is not visible!", keyStoreFile.getAbsolutePath()));
         }
     }
 }
