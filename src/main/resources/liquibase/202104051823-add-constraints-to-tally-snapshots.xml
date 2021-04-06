@@ -1,0 +1,13 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="202104051823-1" author="mstead">
+        <comment>Prevent duplicate tally_snapshot records from being created</comment>
+        <addUniqueConstraint constraintName="tally_snapshot_unique_constraint" tableName="tally_snapshots"
+          columnNames="product_id, account_number, granularity, owner_id, snapshot_date, usage, sla, unit_of_measure"/>
+    </changeSet>
+
+</databaseChangeLog>
