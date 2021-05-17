@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +63,7 @@ public class CaptureSnapshotsTaskManager {
   private final TaskQueue queue;
   private final AccountListSource accountListSource;
   private final ApplicationClock applicationClock;
+  private final TaskLauncher taskLauncher;
 
   @Autowired
   public CaptureSnapshotsTaskManager(
@@ -69,13 +71,15 @@ public class CaptureSnapshotsTaskManager {
       @Qualifier("tallyTaskQueueProperties") TaskQueueProperties tallyTaskQueueProperties,
       TaskQueue queue,
       AccountListSource accountListSource,
-      ApplicationClock applicationClock) {
+      ApplicationClock applicationClock,
+      TaskLauncher taskLauncher) {
 
     this.appProperties = appProperties;
     this.taskQueueProperties = tallyTaskQueueProperties;
     this.queue = queue;
     this.accountListSource = accountListSource;
     this.applicationClock = applicationClock;
+    this.taskLauncher = taskLauncher;
   }
 
   /**
@@ -186,6 +190,10 @@ public class CaptureSnapshotsTaskManager {
     // rules around a specific time zone.  If the subtracted amount crosses a change in the zone's
     // offset (e.g. Daylight Saving Time), the ZonedDateTime.minus method will handle that properly.
     return dateTime.toZonedDateTime().minus(adjustmentAmount).toOffsetDateTime();
+  }
+
+  public void updateHourlySnapshotsForAllAccountsViaSpringCloudTask() {
+    //taskLauncher.launch(AppDeploymentRequest)
   }
 
   /**

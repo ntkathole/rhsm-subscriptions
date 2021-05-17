@@ -6,7 +6,7 @@
 resteasy:
   jaxrs:
     app:
-      registration: property
+      #registration: property
       classes: org.candlepin.subscriptions.resteasy.JaxrsApplication
 management:
   endpoints:
@@ -62,6 +62,8 @@ spring:
       # if no offset commit exists yet, set to earliest
       auto-offset-reset: earliest
       max-poll-records: 1
+  application:
+    name: ${hostname}
 
 # See https://hawt.io/docs/configuration/ for details on built-in hawtio config
 hawtio:

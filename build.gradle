@@ -31,6 +31,8 @@ ext {
     swagger_ui_version = "3.48.0"
     resteasy_version = "3.6.3.Final"
     spring_boot_version = "2.4.5"
+    spring_cloud_version = "2020.0.2"
+    spring_cloud_deployer_kubernetes_version = "2.5.2"
     jboss_jaxrs_api_version = "2.0.1.Final"
     resteasy_spring_boot_starter_version = "3.0.0.Final"
     kafka_avro_serializer_version = "6.1.1"
@@ -59,6 +61,7 @@ allprojects {
             // See https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-dependencies to
             // get listings of the contents of this BOM
             mavenBom "org.springframework.boot:spring-boot-dependencies:$spring_boot_version"
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:$spring_cloud_version"
         }
         dependencies{
             dependency "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec:$jboss_jaxrs_api_version"
@@ -73,7 +76,8 @@ allprojects {
             }
             dependency "io.confluent:kafka-avro-serializer:$kafka_avro_serializer_version"
             dependency "org.apache.avro:avro:$avro_version"
-            dependency "io.hawt:hawtio-springboot:2.13.3"
+            dependency "org.springframework.cloud:spring-cloud-deployer-kubernetes:$spring_cloud_deployer_kubernetes_version"
+            dependency "io.hawt:hawtio-springboot:2.13.2"
         }
     }
 
@@ -209,6 +213,8 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-data-jpa"
     compile "org.springframework.boot:spring-boot-starter-security"
     compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.springframework.cloud:spring-cloud-starter-task"
+    compile "org.springframework.cloud:spring-cloud-deployer-kubernetes"
     compile "org.springframework.retry:spring-retry"
     compile "org.springframework:spring-context-support"
     compile "org.springframework.kafka:spring-kafka"

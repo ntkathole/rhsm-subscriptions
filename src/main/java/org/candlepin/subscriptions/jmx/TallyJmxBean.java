@@ -27,6 +27,11 @@ import org.candlepin.subscriptions.util.DateRange;
 import org.candlepin.subscriptions.validator.ParameterDuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.task.repository.TaskExecution;
+import org.springframework.cloud.task.repository.TaskExplorer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedOperationParameter;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -42,9 +47,12 @@ public class TallyJmxBean {
   private static final Logger log = LoggerFactory.getLogger(TallyJmxBean.class);
 
   private final CaptureSnapshotsTaskManager tasks;
+  private final TaskExplorer taskExplorer;
 
-  public TallyJmxBean(CaptureSnapshotsTaskManager taskManager) {
+  public TallyJmxBean(CaptureSnapshotsTaskManager taskManager,
+      TaskExplorer taskExplorer) {
     this.tasks = taskManager;
+    this.taskExplorer = taskExplorer;
   }
 
   @ManagedOperation(description = "Trigger a tally for an account")
@@ -92,6 +100,11 @@ public class TallyJmxBean {
     log.info(
         "Hourly tally for all accounts triggered over JMX by {}", ResourceUtils.getPrincipal());
 
-    tasks.updateHourlySnapshotsForAllAccounts();
+    tasks.updateHourlySnapshotsForAllAccountsViaSpringCloudTask();
+  }
+
+  @ManagedOperation
+  public Page<TaskExecution> getStuff(int page, String sort) {
+    return taskExplorer.findAll(PageRequest.of(page, 100, Sort.by(sort)));
   }
 }

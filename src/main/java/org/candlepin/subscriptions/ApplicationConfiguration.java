@@ -31,6 +31,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
+import javax.sql.DataSource;
 import javax.validation.Validator;
 import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
 import org.candlepin.subscriptions.conduit.ConduitConfiguration;
@@ -44,10 +45,18 @@ import org.candlepin.subscriptions.subscription.SubscriptionServiceConfiguration
 import org.candlepin.subscriptions.tally.TallyWorkerConfiguration;
 import org.candlepin.subscriptions.tally.job.CaptureHourlySnapshotsConfiguration;
 import org.candlepin.subscriptions.tally.job.CaptureSnapshotsConfiguration;
+import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.candlepin.subscriptions.user.UserServiceClientConfiguration;
 import org.candlepin.subscriptions.util.ApplicationClock;
 import org.candlepin.subscriptions.util.HawtioConfiguration;
 import org.candlepin.subscriptions.util.LiquibaseUpdateOnlyConfiguration;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.task.configuration.DefaultTaskConfigurer;
+import org.springframework.cloud.task.configuration.EnableTask;
+import org.springframework.cloud.task.configuration.TaskConfigurer;
+import org.springframework.cloud.task.launcher.annotation.EnableTaskLauncher;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -77,10 +86,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
   SubscriptionServiceConfiguration.class,
   UserServiceClientConfiguration.class
 })
+@EnableTask
+@EnableTaskLauncher
 public class ApplicationConfiguration implements WebMvcConfigurer {
   @Bean
   ApplicationProperties applicationProperties() {
     return new ApplicationProperties();
+  }
+
+  @Bean
+  @Qualifier("marketplaceTasks")
+  @ConfigurationProperties(prefix = "rhsm-subscriptions.marketplace-tasks")
+  TaskQueueProperties tallySummaryQueueProperties() {
+    return new TaskQueueProperties();
   }
 
   @Bean
@@ -132,5 +150,10 @@ public class ApplicationConfiguration implements WebMvcConfigurer {
   @Bean
   public TimedAspect timedAspect(MeterRegistry registry) {
     return new TimedAspect(registry);
+  }
+
+  @Bean
+  TaskConfigurer taskConfigurer(DataSource dataSource, ApplicationContext applicationContext) {
+    return new DefaultTaskConfigurer(dataSource);
   }
 }

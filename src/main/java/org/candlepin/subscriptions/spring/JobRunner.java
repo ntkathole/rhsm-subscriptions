@@ -44,6 +44,7 @@ public class JobRunner implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
+    Runnable job = (Runnable) applicationContext.getBean(Class.forName(args[0]));
     boolean success = false;
     try {
       log.info("Running {} and then exiting.", job.getClass().getSimpleName());
