@@ -74,6 +74,8 @@ objects:
       name: openshift-metrics-cron
     spec:
       schedule: ${OPENSHIFT_METERING_SCHEDULE}
+      successfulJobsHistoryLimit: 24
+      failedJobsHistoryLimit: 24
       jobTemplate:
         spec:
           activeDeadlineSeconds: 1800
