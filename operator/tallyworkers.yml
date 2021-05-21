@@ -1,0 +1,7 @@
+apiVersion: org.candlepin.subscriptions/v1alpha1
+kind: TallyWorker
+metadata:
+  name: tally-worker
+spec:
+  numberReplicas: 1
+  numberThreads: 1

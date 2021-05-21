@@ -1,4 +1,14 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    plugins {
+        id "${quarkusPluginId}" version "${quarkusPluginVersion}"
+    }
+}
 rootProject.name = 'rhsm-subscriptions'
 include ':api', ':insights-inventory-client', ':rhsm-client', ':cloudigrade-client', 'kafka-schema',
         ':rbac-client', ':subscription-client', ':marketplace-client', ':prometheus-client',
-        ':user-client', ':product-client'
+        ':user-client', ':product-client', 'operator'
