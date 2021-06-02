@@ -65,11 +65,20 @@ We have a number of profiles. Each profile activates a subset of components in t
 
 - `api`: Run the user-facing API
 - `capacity-ingress`: Run the internal only capacity ingress API
-- `purge-snapshots`: Run the retention job and exit
+- `capture-hourly-snapshots`: Run the tally job for hourly snapshots
 - `capture-snapshots`: Run the tally job and exit
 - `kafka-queue`: Run with a kafka queue (instead of the default in-memory queue)
-- `rhsm-conduit`: Run the worker for syncing systems between Hosted Candlepin and HBI
-- `marketplace`: Run the worker responsible for processing tally summaries and emitting usage to Marketplace.
+- `liquibase-only`: Run the Liquibase migrations and stop
+- `marketplace`: Run the worker responsible for processing tally summaries and
+  emitting usage to Marketplace.
+- `metering-jmx`: Expose the JMX bean to create metering jobs
+- `metering-job`: Create metering jobs and place them on the job queue
+- `openshift-metering-worker`: Process OpenShift metering jobs off the job queue
+- `orgsync`:
+- `purge-snapshots`: Run the retention job and exit
+- `rhsm-conduit`: Run the worker for syncing systems between Hosted Candlepin
+  and HBI
+- `worker`: Process jobs off the job queue
 
 These can be specified most easily via the `SPRING_PROFILES_ACTIVE` environment variable. For example:
 
@@ -228,4 +237,42 @@ push with `git push --follow-tags origin master`.
 
 ## Kafka
 
-See the detailed notes [here](README-kafka.md)
+`podman-compose` deploys a kafka instance w/ a UI at http://localhost:3030
+
+Two environment variables can be used to manipulate the offsets of the kafka
+consumers:
+
+- `KAFKA_SEEK_OVERRIDE_END` when set to `true` seeks to the very end
+- `KAFKA_SEEK_OVERRIDE_TIMESTAMP` when set to an OffsetDateTime, seeks the
+  queue to this position.
+
+These changes are permanent, committed the next time the kafka consumer is detected
+as idle.
+
+## Dashboard
+
+See App-SRE documentation on updating dashboards for more info.
+
+Essentially:
+
+1. Edit the dashboard on the stage grafana instance.
+2. Export the dashboard, choosing to "export for sharing externally", save JSON to a file.
+3. Rename the file to `subscription-watch-dashboard.json`.
+
+Use the following command to update the configmap YAML:
+
+```
+oc create configmap grafana-dashboard-subscription-watch --from-file=subscription-watch.json -o yaml --dry-run > dashboards/grafana-dashboard-subscription-watch.configmap.yaml
+cat << EOF >> dashboards/grafana-dashboard-subscription-watch.configmap.yaml
+  annotations:
+    grafana-folder: /grafana-dashboard-definitions/Insights
+  labels:
+    grafana_dashboard: "true"
+EOF
+```
+
+Possibly useful, to extract the JSON from the k8s configmap file:
+
+```
+oc convert -f dashboards/grafana-dashboard-subscription-watch.configmap.yaml -o go-template --template='{{ index .data "subscription-watch.json" }}' > subscription-watch.json
+```

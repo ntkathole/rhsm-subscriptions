@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Red Hat, Inc.
+ * Copyright Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,12 +20,14 @@
  */
 package org.candlepin.subscriptions.subscription;
 
+import java.time.OffsetDateTime;
+import java.util.Optional;
+import javax.transaction.Transactional;
 import org.candlepin.subscriptions.db.SubscriptionRepository;
 import org.candlepin.subscriptions.subscription.api.model.Subscription;
 import org.candlepin.subscriptions.subscription.api.model.SubscriptionProduct;
 import org.candlepin.subscriptions.subscription.job.SubscriptionTaskManager;
 import org.candlepin.subscriptions.util.ApplicationClock;
-
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
@@ -52,62 +54,60 @@ public class SubscriptionSyncController {
         this.subscriptionTaskManager = subscriptionTaskManager;
     }
 
-    @Transactional
-    public void syncSubscription(Subscription subscription) {
-        final Optional<org.candlepin.subscriptions.db.model.Subscription> entity =
-            subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
-        if (entity.isPresent()) {
-            final org.candlepin.subscriptions.db.model.Subscription dbSub = entity.get();
-            if (needNewRecord(subscription, dbSub)) {
-                // end the current record
-                dbSub.setEndDate(OffsetDateTime.now());
-                subscriptionRepository.save(dbSub);
-                // create a new record
-                final org.candlepin.subscriptions.db.model.Subscription newSub =
-                    new org.candlepin.subscriptions.db.model.Subscription();
-                newSub.setSubscriptionId(dbSub.getSubscriptionId());
-                newSub.setSku(dbSub.getSku());
-                newSub.setOwnerId(dbSub.getOwnerId());
-                newSub.setAccountNumber(dbSub.getAccountNumber());
-                newSub.setQuantity(subscription.getQuantity());
+  @Transactional
+  public void syncSubscription(Subscription subscription) {
+    final Optional<org.candlepin.subscriptions.db.model.Subscription> entity =
+        subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
+    if (entity.isPresent()) {
+      final org.candlepin.subscriptions.db.model.Subscription dbSub = entity.get();
+      if (needNewRecord(subscription, dbSub)) {
+        // end the current record
+        dbSub.setEndDate(OffsetDateTime.now());
+        subscriptionRepository.save(dbSub);
+        // create a new record
+        final org.candlepin.subscriptions.db.model.Subscription newSub =
+            new org.candlepin.subscriptions.db.model.Subscription();
+        newSub.setSubscriptionId(dbSub.getSubscriptionId());
+        newSub.setSku(dbSub.getSku());
+        newSub.setOwnerId(dbSub.getOwnerId());
+        newSub.setAccountNumber(dbSub.getAccountNumber());
+        newSub.setQuantity(subscription.getQuantity());
 
-                newSub.setStartDate(OffsetDateTime.now());
-                if (subscription.getEffectiveEndDate() != null) {
-                    newSub.setEndDate(clock.dateFromUnix(subscription.getEffectiveEndDate()));
-                }
-
-                newSub.setMarketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription));
-
-                subscriptionRepository.save(newSub);
-            }
-            else {
-                updateSubscription(subscription, dbSub);
-                subscriptionRepository.save(dbSub);
-            }
+        newSub.setStartDate(OffsetDateTime.now());
+        if (subscription.getEffectiveEndDate() != null) {
+          newSub.setEndDate(clock.dateFromMilliseconds(subscription.getEffectiveEndDate()));
         }
-        else {
-            // create a new record
-            final org.candlepin.subscriptions.db.model.Subscription newSub =
+
+        newSub.setMarketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription));
+        subscriptionRepository.save(newSub);
+      } else {
+          updateSubscription(subscription, dbSub);
+          subscriptionRepository.save(dbSub);
+      }
+    } else {
+        // create a new record
+        final org.candlepin.subscriptions.db.model.Subscription newSub =
                 convertDto(subscription);
-            subscriptionRepository.save(newSub);
+        subscriptionRepository.save(newSub);
         }
     }
 
-    protected static boolean needNewRecord(Subscription dto,
-        org.candlepin.subscriptions.db.model.Subscription entity) {
-        return dto.getQuantity() != entity.getQuantity();
-    }
+  protected static boolean needNewRecord(
+      Subscription dto, org.candlepin.subscriptions.db.model.Subscription entity) {
+    return dto.getQuantity() != entity.getQuantity();
+  }
 
-    protected void updateSubscription(Subscription dto,
-        org.candlepin.subscriptions.db.model.Subscription entity) {
-        if (dto.getEffectiveEndDate() != null) {
-            entity.setEndDate(clock.dateFromUnix(dto.getEffectiveEndDate()));
-        }
-    }
+  protected void updateSubscription(
+      Subscription dto, org.candlepin.subscriptions.db.model.Subscription entity) {
+      if (dto.getEffectiveEndDate() != null) {
+          entity.setEndDate(clock.dateFromMilliseconds(dto.getEffectiveEndDate()));
+      }
+  }
 
-    public void syncAllSubcriptionsForOrg(String orgId) {
+  public void syncAllSubcriptionsForOrg(String orgId) {
         subscriptionTaskManager.syncSubscriptionsForOrg(orgId, 0, 100L);
     }
+
 
     public void syncSubscriptions(String orgId, String offset, String limit) throws ApiException {
         int index = Integer.parseInt(offset);
@@ -151,7 +151,6 @@ public class SubscriptionSyncController {
         entity.setOwnerId(String.valueOf(subscription.getWebCustomerId()));
         entity.setMarketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription));
         entity.setAccountNumber(String.valueOf(subscription.getOracleAccountNumber()));
-
         return entity;
     }
 }

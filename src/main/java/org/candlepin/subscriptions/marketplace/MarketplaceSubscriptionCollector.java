@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Red Hat, Inc.
+ * Copyright Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,32 +20,49 @@
  */
 package org.candlepin.subscriptions.marketplace;
 
-import org.candlepin.subscriptions.marketplace.api.resources.MarketplaceApi;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import org.candlepin.subscriptions.subscription.SubscriptionService;
 import org.candlepin.subscriptions.subscription.api.model.Subscription;
-import org.candlepin.subscriptions.tally.UsageCalculation.Key;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
-import java.util.List;
+import org.springframework.util.StringUtils;
 
 /**
  * Class responsible for communicating with the Marketplace API and fetching the subscription ID.
  */
 @Component
 public class MarketplaceSubscriptionCollector {
-    @SuppressWarnings("java:S1068") // Unused field; Remove after implementing
-    private final MarketplaceApi marketplaceApi;
 
-    @Autowired
-    public MarketplaceSubscriptionCollector(MarketplaceApi marketplaceApi,
-        MarketplaceProperties properties) {
-        this.marketplaceApi = marketplaceApi;
+  private static final String IBMMARKETPLACE = "ibmmarketplace";
+  private final SubscriptionService subscriptionService;
+
+  @Autowired
+  public MarketplaceSubscriptionCollector(SubscriptionService subscriptionService) {
+    this.subscriptionService = subscriptionService;
+  }
+
+  /**
+   * Given an org ID, query the IT Subscription Service and return subscriptions that have an ibm
+   * marketplace external reference as part of its payload
+   *
+   * @param orgId - org ID used to look up subscriptions.
+   * @return subscriptions
+   */
+  public List<Subscription> requestSubscriptions(String orgId) {
+    if (!StringUtils.hasText(orgId)) {
+      throw new IllegalArgumentException("The orgId parameter can not be null or empty.");
     }
 
-    @SuppressWarnings("java:S1172") // Unused parameters; remove after implementing
-    public List<Subscription> fetchSubscription(String orgId, Key usageKey) {
-        return Collections.emptyList();
-    }
+    var subscriptions = subscriptionService.getSubscriptionsByOrgId(orgId);
+    return filterNonApplicableSubscriptions(subscriptions);
+  }
+
+  protected List<Subscription> filterNonApplicableSubscriptions(List<Subscription> subscriptions) {
+    return subscriptions.stream()
+        .filter(sub -> !Objects.isNull(sub.getExternalReferences()))
+        .filter(sub -> !Objects.isNull(sub.getExternalReferences().get(IBMMARKETPLACE)))
+        .collect(Collectors.toList());
+  }
 }

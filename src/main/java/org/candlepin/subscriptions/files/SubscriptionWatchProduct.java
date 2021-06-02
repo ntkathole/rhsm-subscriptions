@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Red Hat, Inc.
+ * Copyright Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,54 +20,27 @@
  */
 package org.candlepin.subscriptions.files;
 
-import java.util.Objects;
 import java.util.Set;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /** Represents the idea of products in Subscription Watch and what family they slot into. */
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 public class SubscriptionWatchProduct {
-    private String engProductId;
-    private Set<String> swatchProductIds;
+  private String engProductId;
+  private Set<String> swatchProductIds;
 
-    public SubscriptionWatchProduct() {
-        // Required for YAML
-    }
+  public SubscriptionWatchProduct() {
+    // Required for YAML
+  }
 
-    public SubscriptionWatchProduct(String engProductId, Set<String> swatchProductIds) {
-        this.engProductId = engProductId;
-        this.swatchProductIds = swatchProductIds;
-    }
-
-    public String getEngProductId() {
-        return engProductId;
-    }
-
-    public void setEngProductId(String engProductId) {
-        this.engProductId = engProductId;
-    }
-
-    public Set<String> getSwatchProductIds() {
-        return swatchProductIds;
-    }
-
-    public void setSwatchProductIds(Set<String> swatchProductIds) {
-        this.swatchProductIds = swatchProductIds;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        SubscriptionWatchProduct that = (SubscriptionWatchProduct) obj;
-        return engProductId.equals(that.engProductId) &&
-            swatchProductIds.equals(that.swatchProductIds);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(engProductId, swatchProductIds);
-    }
+  public SubscriptionWatchProduct(String engProductId, Set<String> swatchProductIds) {
+    this.engProductId = engProductId;
+    this.swatchProductIds = swatchProductIds;
+  }
 }

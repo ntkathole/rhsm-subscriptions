@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Red Hat, Inc.
+ * Copyright Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,20 +20,6 @@
  */
 package org.candlepin.subscriptions;
 
-import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
-import org.candlepin.subscriptions.conduit.ConduitConfiguration;
-import org.candlepin.subscriptions.conduit.job.OrgSyncConfiguration;
-import org.candlepin.subscriptions.marketplace.MarketplaceWorkerConfiguration;
-import org.candlepin.subscriptions.metering.MeteringConfiguration;
-import org.candlepin.subscriptions.resource.ApiConfiguration;
-import org.candlepin.subscriptions.retention.PurgeSnapshotsConfiguration;
-import org.candlepin.subscriptions.security.SecurityConfig;
-import org.candlepin.subscriptions.tally.TallyWorkerConfiguration;
-import org.candlepin.subscriptions.tally.job.CaptureSnapshotsConfiguration;
-import org.candlepin.subscriptions.util.ApplicationClock;
-import org.candlepin.subscriptions.util.HawtioConfiguration;
-import org.candlepin.subscriptions.util.LiquibaseUpdateOnlyConfiguration;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,78 +29,118 @@ import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-
+import io.micrometer.core.aop.TimedAspect;
+import io.micrometer.core.instrument.MeterRegistry;
+import javax.validation.Validator;
+import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
+import org.candlepin.subscriptions.conduit.ConduitConfiguration;
+import org.candlepin.subscriptions.conduit.job.OrgSyncConfiguration;
+import org.candlepin.subscriptions.marketplace.MarketplaceWorkerConfiguration;
+import org.candlepin.subscriptions.metering.MeteringConfiguration;
+import org.candlepin.subscriptions.resource.ApiConfiguration;
+import org.candlepin.subscriptions.retention.PurgeSnapshotsConfiguration;
+import org.candlepin.subscriptions.security.SecurityConfig;
+import org.candlepin.subscriptions.subscription.SubscriptionServiceConfiguration;
+import org.candlepin.subscriptions.tally.TallyWorkerConfiguration;
+import org.candlepin.subscriptions.tally.job.CaptureHourlySnapshotsConfiguration;
+import org.candlepin.subscriptions.tally.job.CaptureSnapshotsConfiguration;
+import org.candlepin.subscriptions.task.TaskQueueProperties;
+import org.candlepin.subscriptions.user.UserServiceClientConfiguration;
+import org.candlepin.subscriptions.util.ApplicationClock;
+import org.candlepin.subscriptions.util.HawtioConfiguration;
+import org.candlepin.subscriptions.util.LiquibaseUpdateOnlyConfiguration;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import io.micrometer.core.aop.TimedAspect;
-import io.micrometer.core.instrument.MeterRegistry;
-
-import javax.validation.Validator;
-
-/** Class to hold configuration beans common to all profiles and import all profile configurations */
+/**
+ * Class to hold configuration beans common to all profiles and import all profile configurations
+ */
 @Configuration
 @Import({
-    ApiConfiguration.class, ConduitConfiguration.class, CapacityIngressConfiguration.class,
-    CaptureSnapshotsConfiguration.class, PurgeSnapshotsConfiguration.class,
-    LiquibaseUpdateOnlyConfiguration.class, TallyWorkerConfiguration.class, OrgSyncConfiguration.class,
-    MarketplaceWorkerConfiguration.class, DevModeConfiguration.class, SecurityConfig.class,
-    HawtioConfiguration.class, MeteringConfiguration.class
+  ApiConfiguration.class,
+  ConduitConfiguration.class,
+  CapacityIngressConfiguration.class,
+  CaptureSnapshotsConfiguration.class,
+  CaptureHourlySnapshotsConfiguration.class,
+  PurgeSnapshotsConfiguration.class,
+  LiquibaseUpdateOnlyConfiguration.class,
+  TallyWorkerConfiguration.class,
+  OrgSyncConfiguration.class,
+  MarketplaceWorkerConfiguration.class,
+  DevModeConfiguration.class,
+  SecurityConfig.class,
+  HawtioConfiguration.class,
+  MeteringConfiguration.class,
+  SubscriptionServiceConfiguration.class,
+  UserServiceClientConfiguration.class
 })
 public class ApplicationConfiguration implements WebMvcConfigurer {
-    @Bean
-    ApplicationProperties applicationProperties() {
-        return new ApplicationProperties();
-    }
+  @Bean
+  ApplicationProperties applicationProperties() {
+    return new ApplicationProperties();
+  }
 
-    @Bean
-    @Primary
-    ObjectMapper objectMapper(ApplicationProperties applicationProperties) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        objectMapper.setDateFormat(new StdDateFormat().withColonInTimeZone(true));
-        objectMapper.configure(SerializationFeature.INDENT_OUTPUT, applicationProperties.isPrettyPrintJson());
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        objectMapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
+  @Bean
+  @Qualifier("marketplaceTasks")
+  @ConfigurationProperties(prefix = "rhsm-subscriptions.marketplace-tasks")
+  TaskQueueProperties tallySummaryQueueProperties() {
+    return new TaskQueueProperties();
+  }
 
-        // Explicitly load the modules we need rather than use ObjectMapper.findAndRegisterModules in order to
-        // avoid com.fasterxml.jackson.module.scala.DefaultScalaModule, which was causing deserialization
-        // to ignore @JsonProperty on OpenApi classes.
-        objectMapper.registerModule(new JaxbAnnotationModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.registerModule(new Jdk8Module());
+  @Bean
+  @Primary
+  ObjectMapper objectMapper(ApplicationProperties applicationProperties) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    objectMapper.setDateFormat(new StdDateFormat().withColonInTimeZone(true));
+    objectMapper.configure(
+        SerializationFeature.INDENT_OUTPUT, applicationProperties.isPrettyPrintJson());
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    objectMapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
 
-        return objectMapper;
-    }
+    // Explicitly load the modules we need rather than use ObjectMapper.findAndRegisterModules in
+    // order to
+    // avoid com.fasterxml.jackson.module.scala.DefaultScalaModule, which was causing
+    // deserialization
+    // to ignore @JsonProperty on OpenApi classes.
+    objectMapper.registerModule(new JaxbAnnotationModule());
+    objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.registerModule(new Jdk8Module());
 
-    @Bean
-    ApplicationClock applicationClock() {
-        return new ApplicationClock();
-    }
+    return objectMapper;
+  }
 
-    /**
-     * Tell Spring AOP to run methods in classes marked @Validated through the JSR-303 Validation
-     * implementation.  Validations that fail will throw an ConstraintViolationException.
-     * @return post-processor used by Spring AOP
-     */
-    @Bean
-    public MethodValidationPostProcessor methodValidationPostProcessor() {
-        return new MethodValidationPostProcessor();
-    }
+  @Bean
+  ApplicationClock applicationClock() {
+    return new ApplicationClock();
+  }
 
-    @Bean
-    public Validator validator() {
-        return new LocalValidatorFactoryBean();
-    }
+  /* Do not declare a MethodValidationPostProcessor!
+   *
+   * The Spring Core documents instruct the user to create a MethodValidationPostProcessor in order to
+   * enable method validation.  However, Spring Boot takes care of creating that bean that itself:
+   * "The method validation feature supported by Bean Validation 1.1 is automatically enabled as long as a
+   * JSR-303 implementation (such as Hibernate validator) is on the classpath" (from
+   * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-validation).
+   *
+   * Creating our own MethodValidationPostProcessor causes ConstraintValidator implementations to *not*
+   * receive injection from the Spring IoC container.
+   */
 
-    @Bean
-    public TimedAspect timedAspect(MeterRegistry registry) {
-        return new TimedAspect(registry);
-    }
+  @Bean
+  public Validator validator() {
+    return new LocalValidatorFactoryBean();
+  }
+
+  @Bean
+  public TimedAspect timedAspect(MeterRegistry registry) {
+    return new TimedAspect(registry);
+  }
 }

@@ -1,4 +1,7 @@
 rhsm-subscriptions:
+  jmx:
+    tallyBean:
+      hourlyTallyDurationLimitDays: 90d
   inventory-service:
     datasource:
       url: jdbc:postgresql://${INVENTORY_DATABASE_HOST:localhost}/${INVENTORY_DATABASE_DATABASE:insights}
@@ -18,9 +21,9 @@ rhsm-subscriptions:
   cloudigrade:
     url: http://${CLOUDIGRADE_HOST:localhost}:${CLOUDIGRADE_PORT:8080}/api/cloudigrade/v2
     maxConnections: ${CLOUDIGRADE_MAX_CONNECTIONS:100}
-  subscription:
-    useStub: ${STUB_SUBSCRIPTION:true}
-    url: http://${SUBSCRIPTION_HOST:localhost}:${SUBSCRIPTION_PORT:8080}/svcrest/subscription/v5
-    keystore: file:${SUBSCRIPTION_KEYSTORE:}
-    keystorePassword: changeit
-    maxConnections: ${SUBSCRIPTION_MAX_CONNECTIONS:100}
+  product:
+    useStub: ${PRODUCT_USE_STUB:false}
+    url: ${PRODUCT_URL:https://product.qa.api.redhat.com/svcrest/product/v3}
+    keystore: file:${PRODUCT_KEYSTORE:}
+    keystorePassword: ${PRODUCT_KEYSTORE_PASSWORD:changeit}
+    maxConnections: ${PRODUCT_MAX_CONNECTIONS:100}

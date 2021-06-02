@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 - 2021 Red Hat, Inc.
+ * Copyright Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,66 +20,94 @@
  */
 package org.candlepin.subscriptions.tally;
 
+import java.lang.reflect.Constructor;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validator;
+import javax.validation.executable.ExecutableValidator;
 import org.candlepin.subscriptions.tally.tasks.CaptureMetricsSnapshotTask;
 import org.candlepin.subscriptions.tally.tasks.UpdateAccountSnapshotsTask;
 import org.candlepin.subscriptions.task.Task;
 import org.candlepin.subscriptions.task.TaskDescriptor;
 import org.candlepin.subscriptions.task.TaskFactory;
 import org.candlepin.subscriptions.task.TaskType;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.time.OffsetDateTime;
-
 /**
- * A class responsible for a TaskDescriptor into actual Task instances. Task instances are build via the
- * build(TaskDescriptor) method. The type of Task that will be built is determined by the descriptor's
- * TaskType property.
+ * A class responsible for a TaskDescriptor into actual Task instances. Task instances are build via
+ * the build(TaskDescriptor) method. The type of Task that will be built is determined by the
+ * descriptor's TaskType property.
  */
-
+@Component
 public class TallyTaskFactory implements TaskFactory {
+  private static final Logger log = LoggerFactory.getLogger(TallyTaskFactory.class);
+  private final TallySnapshotController snapshotController;
+  private final ExecutableValidator validator;
 
-    @Autowired
-    private TallySnapshotController snapshotController;
+  @Autowired
+  public TallyTaskFactory(Validator validator, TallySnapshotController snapshotController) {
+    this.validator = validator.forExecutables();
+    this.snapshotController = snapshotController;
+  }
 
-    /**
-     * Builds a Task instance based on the specified TaskDescriptor.
-     *
-     * @param taskDescriptor the task descriptor that is used to customize the Task that is to be created.
-     *
-     * @return the Task defined by the descriptor.
-     */
-    @Override
-    public Task build(TaskDescriptor taskDescriptor) {
-        if (taskDescriptor.getTaskType() == TaskType.UPDATE_SNAPSHOTS) {
-            return new UpdateAccountSnapshotsTask(snapshotController, taskDescriptor.getArg("accounts"));
-        }
-
-        if (taskDescriptor.getTaskType() == TaskType.UPDATE_HOURLY_SNAPSHOTS) {
-            validateHourlySnapshotTaskArgs(taskDescriptor);
-
-            String accountNumber = taskDescriptor.getArg("accountNumber").get(0);
-            String startDateTime = taskDescriptor.getArg("startDateTime").get(0);
-            String endDateTime = taskDescriptor.getArg("endDateTime").get(0);
-
-            OffsetDateTime from = OffsetDateTime.parse(startDateTime);
-            OffsetDateTime to = OffsetDateTime.parse(endDateTime);
-
-            return new CaptureMetricsSnapshotTask(snapshotController, accountNumber, from, to);
-        }
-
-        throw new IllegalArgumentException("Could not build task. Unknown task type: " +
-            taskDescriptor.getTaskType());
+  /**
+   * Builds a Task instance based on the specified TaskDescriptor.
+   *
+   * @param taskDescriptor the task descriptor that is used to customize the Task that is to be
+   *     created.
+   * @return the Task defined by the descriptor.
+   */
+  @Override
+  public Task build(TaskDescriptor taskDescriptor) {
+    if (taskDescriptor.getTaskType() == TaskType.UPDATE_SNAPSHOTS) {
+      return new UpdateAccountSnapshotsTask(snapshotController, taskDescriptor.getArg("accounts"));
     }
 
-    protected void validateHourlySnapshotTaskArgs(TaskDescriptor taskDescriptor) {
-        if (CollectionUtils.isEmpty(taskDescriptor.getArg("accountNumber")) ||
-            CollectionUtils.isEmpty(taskDescriptor.getArg("startDateTime")) ||
-            CollectionUtils.isEmpty(taskDescriptor.getArg("endDateTime"))) {
-            throw new IllegalArgumentException(String.format(
-                "Could not build %s task. accountNumber, startDateTime, endDateTime are all required",
-                TaskType.UPDATE_HOURLY_SNAPSHOTS));
-        }
+    if (taskDescriptor.getTaskType() == TaskType.UPDATE_HOURLY_SNAPSHOTS) {
+      validateHourlySnapshotTaskArgs(taskDescriptor);
+
+      String accountNumber = taskDescriptor.getArg("accountNumber").get(0);
+      String startDateTime = taskDescriptor.getArg("startDateTime").get(0);
+      String endDateTime = taskDescriptor.getArg("endDateTime").get(0);
+
+      // CaptureMetricsSnapshotTask is not a Spring managed bean, so we have to invoke the validator
+      // ourselves. This code relies on the CaptureMetricSnapshotTask only having one constructor.
+      Constructor<?> ctor = CaptureMetricsSnapshotTask.class.getConstructors()[0];
+      Object[] args = new Object[] {snapshotController, accountNumber, startDateTime, endDateTime};
+      Set<? extends ConstraintViolation<?>> constraintViolations =
+          validator.validateConstructorParameters(ctor, args);
+
+      if (constraintViolations.isEmpty()) {
+        return new CaptureMetricsSnapshotTask(
+            snapshotController, accountNumber, startDateTime, endDateTime);
+      } else {
+        String message =
+            constraintViolations.stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+        log.error("CaptureMetricsSnapshotTask failed validation: {}", message);
+        throw new ConstraintViolationException(constraintViolations);
+      }
     }
+
+    throw new IllegalArgumentException(
+        "Could not build task. Unknown task type: " + taskDescriptor.getTaskType());
+  }
+
+  protected void validateHourlySnapshotTaskArgs(TaskDescriptor taskDescriptor) {
+    if (CollectionUtils.isEmpty(taskDescriptor.getArg("accountNumber"))
+        || CollectionUtils.isEmpty(taskDescriptor.getArg("startDateTime"))
+        || CollectionUtils.isEmpty(taskDescriptor.getArg("endDateTime"))) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not build %s task. accountNumber, startDateTime, endDateTime are all required",
+              TaskType.UPDATE_HOURLY_SNAPSHOTS));
+    }
+  }
 }

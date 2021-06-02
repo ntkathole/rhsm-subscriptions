@@ -112,3 +112,17 @@ defaultSla: PREMIUM
 defaultUsage: PRODUCTION
 burstable: false
 architectureSwatchProductIdMap: {}
+marketplaceMetrics:
+  - metricId: redhat.com:openshift_dedicated:4cpu_hour
+    uom: Cores
+    swatchProductIds:
+      - OpenShift-dedicated-metrics
+  - metricId: redhat.com:openshift_container_platform:cpu_hour
+    uom: Cores
+    swatchProductIds:
+      - OpenShift-metrics
+swatchProductsByOfferingProductName:
+  - name: OpenShift Dedicated
+    swatchProductId: OpenShift-dedicated
+  - name: OpenShift Container Platform
+    swatchProductId: OpenShift-container-platform
