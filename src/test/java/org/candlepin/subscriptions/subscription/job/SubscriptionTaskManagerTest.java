@@ -26,6 +26,7 @@ import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.candlepin.subscriptions.task.TaskType;
 import org.candlepin.subscriptions.task.queue.inmemory.ExecutorTaskQueue;
 
+import org.candlepin.subscriptions.task.queue.kafka.KafkaTaskQueue;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ import org.springframework.test.context.ContextConfiguration;
 class SubscriptionTaskManagerTest {
 
     @MockBean
-    private ExecutorTaskQueue taskQueue;
+    private KafkaTaskQueue taskQueue;
 
     @Autowired
     @Qualifier("subscriptionTaskQueueProperties")

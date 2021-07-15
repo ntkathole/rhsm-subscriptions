@@ -21,13 +21,16 @@
 package org.candlepin.subscriptions.metering.job;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Set;
 import org.candlepin.subscriptions.ApplicationProperties;
 import org.candlepin.subscriptions.FixedClockConfiguration;
-import org.candlepin.subscriptions.metering.service.prometheus.PrometheusMetricsProperties;
+import org.candlepin.subscriptions.files.TagProfile;
+import org.candlepin.subscriptions.metering.service.prometheus.MetricProperties;
 import org.candlepin.subscriptions.metering.service.prometheus.task.PrometheusMetricsTaskManager;
 import org.candlepin.subscriptions.util.ApplicationClock;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,28 +43,31 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class MeteringJobTest {
 
   @Mock private PrometheusMetricsTaskManager tasks;
+  @Mock private TagProfile tagProfile;
 
   private ApplicationClock clock;
-  private PrometheusMetricsProperties metricProps;
+  private MetricProperties metricProps;
   private ApplicationProperties appProps;
   private MeteringJob job;
 
   @BeforeEach
   void setupTests() {
-    metricProps = new PrometheusMetricsProperties();
-    metricProps.getOpenshift().setRangeInMinutes(180); // 3h
+    metricProps = new MetricProperties();
+    metricProps.setRangeInMinutes(180); // 3h
 
     appProps = new ApplicationProperties();
     appProps.setPrometheusLatencyDuration(Duration.ofHours(6L));
 
     clock = new FixedClockConfiguration().fixedClock();
-    job = new MeteringJob(tasks, clock, metricProps, appProps);
+    job = new MeteringJob(tasks, clock, tagProfile, metricProps, appProps);
+
+    when(tagProfile.getTagsWithPrometheusEnabledLookup()).thenReturn(Set.of("OpenShift-metrics"));
   }
 
   @Test
   void testRunJob() {
     Duration latency = appProps.getPrometheusLatencyDuration();
-    int range = metricProps.getOpenshift().getRangeInMinutes();
+    int range = metricProps.getRangeInMinutes();
 
     // NOW: 2019-05-24T12:35Z
     // Metric Period: 2019-05-24T03:00Z -> 2019-05-24T06:00Z
@@ -71,6 +77,6 @@ class MeteringJobTest {
             expStartDate.plusMinutes(range).truncatedTo(ChronoUnit.HOURS).minusMinutes(1));
     job.run();
 
-    verify(tasks).updateMetricsForAllAccounts("OpenShift", expStartDate, expEndDate);
+    verify(tasks).updateMetricsForAllAccounts("OpenShift-metrics", expStartDate, expEndDate);
   }
 }

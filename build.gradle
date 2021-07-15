@@ -8,16 +8,16 @@ buildscript {
     dependencies {
         classpath "org.openapitools:openapi-generator-gradle-plugin:5.1.1"
         classpath "org.jsonschema2pojo:jsonschema2pojo-gradle-plugin:1.1.1"
-        classpath "de.undercouch:gradle-download-task:4.1.1"
+        classpath "de.undercouch:gradle-download-task:4.1.2"
     }
 }
 
 plugins {
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
-    id "com.diffplug.spotless" version "5.12.5"
+    id "com.diffplug.spotless" version "5.14.0"
     id "jacoco"
-    id "org.sonarqube" version "3.2.0"
-    id "org.springframework.boot" version "2.5.0"
+    id "org.sonarqube" version "3.3"
+    id "org.springframework.boot" version "2.5.2"
     id "net.researchgate.release" version "2.8.1"
     id "GitProperties"
     id 'com.adarshr.test-logger' version '3.0.0'
@@ -28,12 +28,12 @@ plugins {
 
 ext {
     swagger_annotations_version = "1.6.2"
-    swagger_ui_version = "3.49.0"
+    swagger_ui_version = "3.50.0"
     resteasy_version = "3.6.3.Final"
-    spring_boot_version = "2.5.0"
+    spring_boot_version = "2.5.2"
     jboss_jaxrs_api_version = "2.0.1.Final"
     resteasy_spring_boot_starter_version = "3.0.0.Final"
-    kafka_avro_serializer_version = "6.1.1"
+    kafka_avro_serializer_version = "6.2.0"
     avro_version = "1.10.2"
     webjars_locator_version = "0.41"
     generatedMetamodels = "build/generated/sources/annotationProcessor/java/main/org/candlepin/subscriptions"
@@ -73,7 +73,7 @@ allprojects {
             }
             dependency "io.confluent:kafka-avro-serializer:$kafka_avro_serializer_version"
             dependency "org.apache.avro:avro:$avro_version"
-            dependency "io.hawt:hawtio-springboot:2.13.4"
+            dependency "io.hawt:hawtio-springboot:2.13.5"
         }
     }
 
@@ -172,7 +172,7 @@ release {
     newVersionCommitMessage = '[Subscriptions Release] - version bump: '
     pushReleaseVersionBranch = 'main'
     git {
-        requireBranch = /develop|hotfix.*/
+        requireBranch = /develop|hotfix.*|release/
         pushToRemote = false
     }
 }
@@ -241,33 +241,47 @@ dependencies {
     runtime "org.jolokia:jolokia-core"
 }
 
-// Add a custom task to output dependency info in a machine parseable format. Used to generate dependency
-// reports for Product Security.
-// adapted from https://stackoverflow.com/a/34641632
-// easiest to use via `./gradlew -q dependencyJson`
-tasks.register('dependencyJson') {
-    println JsonOutput.toJson(project.configurations.runtime.incoming.resolutionResult.allDependencies.collect { dependency ->
-        ModuleVersionIdentifier artifact = dependency.selected.moduleVersion
-        ComponentIdentifier dependent = dependency.from.id
-        [
-            group: artifact.group,
-            name: artifact.name,
-            version: artifact.version,
-            dependent: dependent.displayName, // by collecting dependents, we can determine transitivity.
-            displayName: dependency.requested.displayName, // displayName starts with "project " for subprojects
-        ]
-    }.groupBy {
-        [
-            group: it.group,
-            name: it.name,
-            version: it.version,
-        ]
-    }.collect { artifactId, artifactInstances ->
-        artifactId + [
-            displayNames: artifactInstances.collect { it.displayName }.unique().sort(),
-            dependents: artifactInstances.collect { it.dependent },
-        ]
-    }.sort { "${it.group}:${it.name}:${it.version}" })
+allprojects {
+    // Add a custom task to output dependency info in a machine parseable format. Used to generate dependency
+    // reports for Product Security.
+    // adapted from https://stackoverflow.com/a/34641632
+    // easiest to use via `./gradlew -q dependencyJson`
+    tasks.register('dependencyJson') {
+        doLast {
+            def collectDeps = { ResolvedDependency dependency ->
+                def collectedDeps = []
+                // depth first traversal
+                def dependencyStack = [dependency]
+                while (!dependencyStack.isEmpty()) {
+                    ResolvedDependency current = dependencyStack.pop()
+                    collectedDeps.add(current)
+                    current.children.forEach { dependencyStack.push(it) }
+                }
+                return collectedDeps
+            }
+            Set allDeps = []
+            def nonTestProjects = allprojects.grep { project -> !project.name.endsWith("-test") }
+            for (Project project : nonTestProjects) {
+                // see https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_plugin_and_dependency_management
+                // "default" is all artifacts required at runtime
+                for (ResolvedDependency topLevelDependency : project.configurations.default.resolvedConfiguration.firstLevelModuleDependencies) {
+                    def collectedDeps = collectDeps(topLevelDependency)
+                    for (ResolvedDependency dependency : collectedDeps) {
+                        // skip deps that appear to be from this project
+                        if (dependency.moduleGroup != project.group || dependency.moduleVersion != project.version) {
+                            allDeps.add([
+                                    group  : dependency.moduleGroup,
+                                    name   : dependency.moduleName,
+                                    version: dependency.moduleVersion,
+                            ])
+                        }
+                    }
+
+                }
+            }
+            println JsonOutput.toJson(allDeps.sort { "${it.group}:${it.name}:${it.version}" })
+        }
+    }
 }
 
 sourceSets {
@@ -389,7 +403,7 @@ project(":rhsm-client") {
     }
 
     dependencies {
-        testCompile "com.github.tomakehurst:wiremock-jre8:2.28.0"
+        testCompile "com.github.tomakehurst:wiremock-jre8:2.29.0"
     }
 }
 

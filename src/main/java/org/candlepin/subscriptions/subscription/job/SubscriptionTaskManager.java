@@ -20,19 +20,24 @@
  */
 package org.candlepin.subscriptions.subscription.job;
 
+import org.candlepin.subscriptions.subscription.SubscriptionTaskQueueConfiguration;
+import org.candlepin.subscriptions.tally.TallyTaskQueueConfiguration;
 import org.candlepin.subscriptions.task.TaskDescriptor;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.candlepin.subscriptions.task.TaskType;
+import org.candlepin.subscriptions.task.queue.TaskProducerConfiguration;
 import org.candlepin.subscriptions.task.queue.TaskQueue;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
 /**
  * Task manager for managing subscription tasks.
  */
 @Component
+@Import({TaskProducerConfiguration.class, SubscriptionTaskQueueConfiguration.class})
 public class SubscriptionTaskManager {
 
     @Autowired

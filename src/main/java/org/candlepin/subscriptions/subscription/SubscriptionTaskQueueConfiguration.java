@@ -25,12 +25,14 @@ import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * Task queue configuration for Subscription tasks.
  */
 @Configuration
+@ComponentScan({"org.candlepin.subscriptions.subscription", "org.candlepin.subscriptions.capacity"})
 public class SubscriptionTaskQueueConfiguration {
 
     @Bean

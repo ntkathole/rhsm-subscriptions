@@ -33,7 +33,7 @@ public class SubscriptionWorker {
         this.subscriptionTaskFactory = subscriptionTaskFactory;
     }
 
-    @KafkaListener(id = "subscription-worker", topics = "#{__listener.topic}")
+    @KafkaListener(id = "subscription-worker", topics = "platform.rhsm-subscriptions.sync")
     public void handleSubscriptionTasks(TaskMessage taskMessage) {
         log.info("Got message: {}", taskMessage);
         final TaskDescriptor descriptor = TaskDescriptor.builder(TaskType.valueOf(taskMessage.getType()),

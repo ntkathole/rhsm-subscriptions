@@ -23,6 +23,7 @@ package org.candlepin.subscriptions.subscription;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import javax.transaction.Transactional;
+import org.candlepin.subscriptions.capacity.CapacityReconciliationController;
 import org.candlepin.subscriptions.db.SubscriptionRepository;
 import org.candlepin.subscriptions.subscription.api.model.Subscription;
 import org.candlepin.subscriptions.subscription.api.model.SubscriptionProduct;
@@ -45,66 +46,94 @@ public class SubscriptionSyncController {
     private final SubscriptionService subscriptionService;
     private final ApplicationClock clock;
     private final SubscriptionTaskManager subscriptionTaskManager;
+    private final CapacityReconciliationController capacityReconciliationController;
 
-    public SubscriptionSyncController(SubscriptionRepository subscriptionRepository, ApplicationClock clock,
-        SubscriptionService subscriptionService, SubscriptionTaskManager subscriptionTaskManager) {
+    public SubscriptionSyncController(
+      SubscriptionRepository subscriptionRepository,
+      ApplicationClock clock,
+      SubscriptionService subscriptionService,
+      CapacityReconciliationController capacityReconciliationController,
+      SubscriptionTaskManager subscriptionTaskManager) {
         this.subscriptionRepository = subscriptionRepository;
-        this.clock = clock;
-        this.subscriptionService = subscriptionService;
-        this.subscriptionTaskManager = subscriptionTaskManager;
-    }
-
-  @Transactional
-  public void syncSubscription(Subscription subscription) {
-    final Optional<org.candlepin.subscriptions.db.model.Subscription> entity =
-        subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
-    if (entity.isPresent()) {
-      final org.candlepin.subscriptions.db.model.Subscription dbSub = entity.get();
-      if (needNewRecord(subscription, dbSub)) {
-        // end the current record
-        dbSub.setEndDate(OffsetDateTime.now());
-        subscriptionRepository.save(dbSub);
-        // create a new record
-        final org.candlepin.subscriptions.db.model.Subscription newSub =
-            new org.candlepin.subscriptions.db.model.Subscription();
-        newSub.setSubscriptionId(dbSub.getSubscriptionId());
-        newSub.setSku(dbSub.getSku());
-        newSub.setOwnerId(dbSub.getOwnerId());
-        newSub.setAccountNumber(dbSub.getAccountNumber());
-        newSub.setQuantity(subscription.getQuantity());
-
-        newSub.setStartDate(OffsetDateTime.now());
-        if (subscription.getEffectiveEndDate() != null) {
-          newSub.setEndDate(clock.dateFromMilliseconds(subscription.getEffectiveEndDate()));
-        }
-
-        newSub.setMarketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription));
-        subscriptionRepository.save(newSub);
-      } else {
-          updateSubscription(subscription, dbSub);
-          subscriptionRepository.save(dbSub);
-      }
-    } else {
-        // create a new record
-        final org.candlepin.subscriptions.db.model.Subscription newSub =
-                convertDto(subscription);
-        subscriptionRepository.save(newSub);
-        }
-    }
-
-  protected static boolean needNewRecord(
-      Subscription dto, org.candlepin.subscriptions.db.model.Subscription entity) {
-    return dto.getQuantity() != entity.getQuantity();
+    this.subscriptionService = subscriptionService;
+    this.capacityReconciliationController = capacityReconciliationController;
+    this.clock = clock;
+      this.subscriptionTaskManager = subscriptionTaskManager;
   }
 
-  protected void updateSubscription(
-      Subscription dto, org.candlepin.subscriptions.db.model.Subscription entity) {
-      if (dto.getEffectiveEndDate() != null) {
-          entity.setEndDate(clock.dateFromMilliseconds(dto.getEffectiveEndDate()));
-      }
-  }
+    @Transactional
+    public void syncSubscription(Subscription subscription) {
 
-  public void syncAllSubcriptionsForOrg(String orgId) {
+        // TODO: https://issues.redhat.com/browse/ENT-4029 //NOSONAR
+        final Optional<org.candlepin.subscriptions.db.model.Subscription> subscriptionOptional =
+                subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
+
+        final org.candlepin.subscriptions.db.model.Subscription newOrUpdated = convertDto(subscription);
+
+        if (subscriptionOptional.isPresent()) {
+
+            final org.candlepin.subscriptions.db.model.Subscription existingSubscription =
+                    subscriptionOptional.get();
+            if (!existingSubscription.equals(newOrUpdated)) {
+                if (existingSubscription.quantityHasChanged(newOrUpdated.getQuantity())) {
+                    existingSubscription.endSubscription();
+                    subscriptionRepository.save(existingSubscription);
+                    final org.candlepin.subscriptions.db.model.Subscription newSub =
+                            org.candlepin.subscriptions.db.model.Subscription.builder()
+                                    .subscriptionId(existingSubscription.getSubscriptionId())
+                                    .sku(existingSubscription.getSku())
+                                    .ownerId(existingSubscription.getOwnerId())
+                                    .accountNumber(existingSubscription.getAccountNumber())
+                                    .quantity(subscription.getQuantity())
+                                    .startDate(OffsetDateTime.now())
+                                    .endDate(clock.dateFromMilliseconds(subscription.getEffectiveEndDate()))
+                                    .marketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription))
+                                    .subscriptionNumber(subscription.getSubscriptionNumber())
+                                    .build();
+                    subscriptionRepository.save(newSub);
+                } else {
+                    updateSubscription(subscription, existingSubscription);
+                    subscriptionRepository.save(existingSubscription);
+                }
+                capacityReconciliationController.reconcileCapacityForSubscription(newOrUpdated);
+            }
+        } else {
+            subscriptionRepository.save(newOrUpdated);
+            capacityReconciliationController.reconcileCapacityForSubscription(newOrUpdated);
+        }
+    }
+
+
+    protected void updateSubscription(
+            Subscription dto, org.candlepin.subscriptions.db.model.Subscription entity) {
+        if (dto.getEffectiveEndDate() != null) {
+            entity.setEndDate(clock.dateFromMilliseconds(dto.getEffectiveEndDate()));
+        }
+    }
+
+    @Transactional
+    public void syncSubscription(String subscriptionId) {
+        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+        syncSubscription(subscription);
+    }
+
+    private org.candlepin.subscriptions.db.model.Subscription convertDto(Subscription subscription) {
+
+        return org.candlepin.subscriptions.db.model.Subscription.builder()
+                .subscriptionId(String.valueOf(subscription.getId()))
+                .subscriptionNumber(subscription.getSubscriptionNumber())
+                .sku(SubscriptionDtoUtil.extractSku(subscription))
+                .ownerId(subscription.getWebCustomerId().toString())
+                .accountNumber(String.valueOf(subscription.getOracleAccountNumber()))
+                .quantity(subscription.getQuantity())
+                .startDate(clock.dateFromMilliseconds(subscription.getEffectiveStartDate()))
+                .endDate(clock.dateFromMilliseconds(subscription.getEffectiveEndDate()))
+                .marketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription))
+                .build();
+    }
+
+
+    public void syncAllSubcriptionsForOrg(String orgId) {
         subscriptionTaskManager.syncSubscriptionsForOrg(orgId, 0, 100L);
     }
 
@@ -119,38 +148,5 @@ public class SubscriptionSyncController {
             subscriptionTaskManager.syncSubscriptionsForOrg(orgId, index + pageSize,
                 (long) pageSize);
         }
-    }
-
-    @Transactional
-    public void syncSubscription(String subscriptionId) throws ApiException {
-        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        syncSubscription(subscription);
-    }
-
-    public org.candlepin.subscriptions.db.model.Subscription getUpstreamSubscription(String subscriptionId)
-        throws ApiException {
-        Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
-        return convertDto(subscription);
-    }
-
-    private org.candlepin.subscriptions.db.model.Subscription convertDto(Subscription subscription) {
-        final org.candlepin.subscriptions.db.model.Subscription entity =
-            new org.candlepin.subscriptions.db.model.Subscription();
-
-        entity.setSubscriptionId(String.valueOf(subscription.getId()));
-        entity.setSku(subscription.getSubscriptionProducts().stream()
-            .filter(subscriptionProduct -> subscriptionProduct.getParentSubscriptionProductId() == null)
-            .findAny().map(SubscriptionProduct::getSku).orElse(null));
-        if (subscription.getEffectiveStartDate() != null) {
-            entity.setStartDate(clock.dateFromUnix(subscription.getEffectiveStartDate()));
-        }
-        if (subscription.getEffectiveEndDate() != null) {
-            entity.setStartDate(clock.dateFromUnix(subscription.getEffectiveEndDate()));
-        }
-        entity.setQuantity(subscription.getQuantity());
-        entity.setOwnerId(String.valueOf(subscription.getWebCustomerId()));
-        entity.setMarketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription));
-        entity.setAccountNumber(String.valueOf(subscription.getOracleAccountNumber()));
-        return entity;
     }
 }

@@ -23,9 +23,9 @@ package org.candlepin.subscriptions.metering.service.prometheus.task;
 import java.time.OffsetDateTime;
 import java.util.stream.Stream;
 import javax.transaction.Transactional;
+import org.candlepin.subscriptions.files.TagProfile;
 import org.candlepin.subscriptions.json.Measurement.Uom;
 import org.candlepin.subscriptions.metering.service.prometheus.PrometheusAccountSource;
-import org.candlepin.subscriptions.metering.service.prometheus.PrometheusMetricsProperties;
 import org.candlepin.subscriptions.task.TaskDescriptor;
 import org.candlepin.subscriptions.task.TaskDescriptor.TaskDescriptorBuilder;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
@@ -48,60 +48,78 @@ public class PrometheusMetricsTaskManager {
 
   private PrometheusAccountSource accountSource;
 
-  private PrometheusMetricsProperties prometheusProps;
+  private TagProfile tagProfile;
 
   public PrometheusMetricsTaskManager(
       TaskQueue queue,
       @Qualifier("meteringTaskQueueProperties") TaskQueueProperties queueProps,
       PrometheusAccountSource accountSource,
-      PrometheusMetricsProperties prometheusProps) {
+      TagProfile tagProfile) {
     log.info("Initializing metering manager. Topic: {}", queueProps.getTopic());
     this.queue = queue;
     this.topic = queueProps.getTopic();
     this.accountSource = accountSource;
-    this.prometheusProps = prometheusProps;
+    this.tagProfile = tagProfile;
   }
 
   public void updateMetricsForAccount(
-      String account, String productProfileId, OffsetDateTime start, OffsetDateTime end) {
+      String account, String productTag, OffsetDateTime start, OffsetDateTime end) {
+    tagProfile
+        .getSupportedMetricsForProduct(productTag)
+        .forEach(
+            metric -> {
+              log.info("Queuing {} {} metric updates for account {}.", productTag, metric, account);
+              queueMetricUpdateForAccount(account, productTag, metric, start, end);
+              log.info("Done queuing updates of {} {} metric", productTag, metric);
+            });
+  }
+
+  private void queueMetricUpdateForAccount(
+      String account, String productTag, Uom metric, OffsetDateTime start, OffsetDateTime end) {
     log.info(
-        "Queuing {} metrics update for account {} between {} and {}",
-        productProfileId,
+        "Queuing {} {} metric update for account {} between {} and {}",
+        productTag,
+        metric,
         account,
         start,
         end);
-    prometheusProps
-        .getSupportedMetricsForProduct(productProfileId)
-        .keySet()
-        .forEach(
-            metric ->
-                this.queue.enqueue(
-                    createMetricsTask(account, productProfileId, metric, start, end)));
+    this.queue.enqueue(createMetricsTask(account, productTag, metric, start, end));
   }
 
   @Transactional
   public void updateMetricsForAllAccounts(
-      String productProfileId, OffsetDateTime start, OffsetDateTime end) {
-    try (Stream<String> accountStream =
-        accountSource.getMarketplaceAccounts(productProfileId, end).stream()) {
-      log.info("Queuing {} metrics update for all configured accounts.", productProfileId);
-      accountStream.forEach(
-          account -> updateMetricsForAccount(account, productProfileId, start, end));
-      log.info("Done queuing updates of {} metrics", productProfileId);
-    }
+      String productTag, OffsetDateTime start, OffsetDateTime end) {
+    tagProfile
+        .getSupportedMetricsForProduct(productTag)
+        .forEach(
+            metric -> {
+              try (Stream<String> accountStream =
+                  accountSource.getMarketplaceAccounts(productTag, metric, end).stream()) {
+                log.info(
+                    "Queuing {} {} metric updates for all configured accounts.",
+                    productTag,
+                    metric);
+                accountStream.forEach(
+                    account ->
+                        queueMetricUpdateForAccount(account, productTag, metric, start, end));
+                log.info("Done queuing updates of {} {} metric", productTag, metric);
+              }
+            });
   }
 
   private TaskDescriptor createMetricsTask(
-      String account,
-      String productProfileId,
-      Uom metric,
-      OffsetDateTime start,
-      OffsetDateTime end) {
-    log.debug("ACCOUNT: {} PRODUCT: {} START: {} END: {}", account, productProfileId, start, end);
+      String account, String productTag, Uom metric, OffsetDateTime start, OffsetDateTime end) {
+    log.info(
+        "ACCOUNT: {} TAG: {} METRIC: {} START: {} END: {}",
+        account,
+        productTag,
+        metric,
+        start,
+        end);
     TaskDescriptorBuilder builder =
         TaskDescriptor.builder(TaskType.METRICS_COLLECTION, topic)
             .setSingleValuedArg("account", account)
-            .setSingleValuedArg("productProfileId", productProfileId)
+            .setSingleValuedArg("productTag", productTag)
             .setSingleValuedArg("metric", metric.value())
             .setSingleValuedArg("start", start.toString());
 

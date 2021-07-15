@@ -21,8 +21,14 @@
 package org.candlepin.subscriptions.metering.service.prometheus;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.candlepin.subscriptions.files.TagMetric;
+import org.candlepin.subscriptions.files.TagProfile;
+import org.candlepin.subscriptions.json.Measurement.Uom;
+import org.candlepin.subscriptions.metering.service.prometheus.promql.QueryBuilder;
+import org.candlepin.subscriptions.metering.service.prometheus.promql.QueryDescriptor;
 import org.candlepin.subscriptions.prometheus.model.QueryResult;
 import org.springframework.util.StringUtils;
 
@@ -30,24 +36,37 @@ import org.springframework.util.StringUtils;
 public class PrometheusAccountSource {
 
   private PrometheusService service;
-  private PrometheusMetricsProperties prometheusProps;
+  private MetricProperties metricProperties;
+  private TagProfile tagProfile;
+  private QueryBuilder queryBuilder;
 
   public PrometheusAccountSource(
-      PrometheusService service, PrometheusMetricsProperties prometheusProps) {
+      PrometheusService service,
+      MetricProperties metricProperties,
+      QueryBuilder queryBuilder,
+      TagProfile tagProfile) {
     this.service = service;
-    this.prometheusProps = prometheusProps;
+    this.metricProperties = metricProperties;
+    this.queryBuilder = queryBuilder;
+    this.tagProfile = tagProfile;
   }
 
-  public Set<String> getMarketplaceAccounts(String productProfileId, OffsetDateTime time) {
+  public Set<String> getMarketplaceAccounts(String productTag, Uom metric, OffsetDateTime time) {
     QueryResult result =
-        service.runQuery(
-            prometheusProps.getEnabledAccountPromQLforProductProfile(productProfileId),
-            time,
-            prometheusProps.getMetricsTimeoutForProductProfile(productProfileId));
+        service.runQuery(buildQuery(productTag, metric), time, metricProperties.getQueryTimeout());
 
     return result.getData().getResult().stream()
         .map(r -> r.getMetric().getOrDefault("ebs_account", ""))
         .filter(StringUtils::hasText)
         .collect(Collectors.toSet());
+  }
+
+  private String buildQuery(String productTag, Uom metric) {
+    Optional<TagMetric> tag = tagProfile.getTagMetric(productTag, metric);
+    if (tag.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format("Could not find TagMetric for %s %s", productTag, metric));
+    }
+    return queryBuilder.buildAccountLookupQuery(new QueryDescriptor(tag.get()));
   }
 }

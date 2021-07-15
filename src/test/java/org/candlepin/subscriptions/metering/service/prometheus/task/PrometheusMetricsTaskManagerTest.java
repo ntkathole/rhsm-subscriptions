@@ -27,12 +27,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
-import java.util.Map;
 import java.util.Set;
+import org.candlepin.subscriptions.files.TagProfile;
 import org.candlepin.subscriptions.json.Measurement.Uom;
-import org.candlepin.subscriptions.metering.service.prometheus.MetricProperties;
 import org.candlepin.subscriptions.metering.service.prometheus.PrometheusAccountSource;
-import org.candlepin.subscriptions.metering.service.prometheus.PrometheusMetricsProperties;
 import org.candlepin.subscriptions.task.TaskDescriptor;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.candlepin.subscriptions.task.TaskType;
@@ -55,18 +53,15 @@ class PrometheusMetricsTaskManagerTest {
 
   @Mock private PrometheusAccountSource accountSource;
 
-  @Mock private PrometheusMetricsProperties prometheusMetricsProperties;
+  @Mock private TagProfile tagProfile;
 
   private PrometheusMetricsTaskManager manager;
 
   @BeforeEach
   void setupTest() {
     when(queueProperties.getTopic()).thenReturn(TASK_TOPIC);
-    when(prometheusMetricsProperties.getSupportedMetricsForProduct(any()))
-        .thenReturn(Map.of(Uom.CORES, new MetricProperties()));
-    manager =
-        new PrometheusMetricsTaskManager(
-            queue, queueProperties, accountSource, prometheusMetricsProperties);
+    when(tagProfile.getSupportedMetricsForProduct(any())).thenReturn(Set.of(Uom.CORES));
+    manager = new PrometheusMetricsTaskManager(queue, queueProperties, accountSource, tagProfile);
   }
 
   @Test
@@ -78,7 +73,7 @@ class PrometheusMetricsTaskManagerTest {
     TaskDescriptor expectedTask =
         TaskDescriptor.builder(TaskType.METRICS_COLLECTION, TASK_TOPIC)
             .setSingleValuedArg("account", account)
-            .setSingleValuedArg("productProfileId", TEST_PROFILE_ID)
+            .setSingleValuedArg("productTag", TEST_PROFILE_ID)
             .setSingleValuedArg("metric", "Cores")
             .setSingleValuedArg("start", start.toString())
             .setSingleValuedArg("end", end.toString())
@@ -92,12 +87,12 @@ class PrometheusMetricsTaskManagerTest {
     OffsetDateTime end = OffsetDateTime.now();
     OffsetDateTime start = end.minusDays(1);
 
-    when(accountSource.getMarketplaceAccounts(eq(TEST_PROFILE_ID), any()))
+    when(accountSource.getMarketplaceAccounts(eq(TEST_PROFILE_ID), eq(Uom.CORES), any()))
         .thenReturn(Set.of("a1", "a2"));
     TaskDescriptor account1Task =
         TaskDescriptor.builder(TaskType.METRICS_COLLECTION, TASK_TOPIC)
             .setSingleValuedArg("account", "a1")
-            .setSingleValuedArg("productProfileId", TEST_PROFILE_ID)
+            .setSingleValuedArg("productTag", TEST_PROFILE_ID)
             .setSingleValuedArg("metric", "Cores")
             .setSingleValuedArg("start", start.toString())
             .setSingleValuedArg("end", end.toString())
@@ -105,7 +100,7 @@ class PrometheusMetricsTaskManagerTest {
     TaskDescriptor account2Task =
         TaskDescriptor.builder(TaskType.METRICS_COLLECTION, TASK_TOPIC)
             .setSingleValuedArg("account", "a2")
-            .setSingleValuedArg("productProfileId", TEST_PROFILE_ID)
+            .setSingleValuedArg("productTag", TEST_PROFILE_ID)
             .setSingleValuedArg("metric", "Cores")
             .setSingleValuedArg("start", start.toString())
             .setSingleValuedArg("end", end.toString())
