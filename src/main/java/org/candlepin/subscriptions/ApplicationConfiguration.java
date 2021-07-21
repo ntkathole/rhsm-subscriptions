@@ -34,8 +34,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import javax.validation.Validator;
 import org.candlepin.subscriptions.capacity.CapacityIngressConfiguration;
 import org.candlepin.subscriptions.capacity.CapacityReconciliationWorkerConfiguration;
-import org.candlepin.subscriptions.conduit.ConduitConfiguration;
-import org.candlepin.subscriptions.conduit.job.OrgSyncConfiguration;
 import org.candlepin.subscriptions.files.ProductMappingConfiguration;
 import org.candlepin.subscriptions.marketplace.MarketplaceWorkerConfiguration;
 import org.candlepin.subscriptions.metering.MeteringConfiguration;
@@ -67,14 +65,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @Import({
   ApiConfiguration.class,
-  ConduitConfiguration.class,
   CapacityIngressConfiguration.class,
   CaptureSnapshotsConfiguration.class,
   CaptureHourlySnapshotsConfiguration.class,
   PurgeSnapshotsConfiguration.class,
   LiquibaseUpdateOnlyConfiguration.class,
   TallyWorkerConfiguration.class,
-  OrgSyncConfiguration.class,
   MarketplaceWorkerConfiguration.class,
   SubscriptionWorkerConfiguration.class,
   CapacityReconciliationWorkerConfiguration.class,
