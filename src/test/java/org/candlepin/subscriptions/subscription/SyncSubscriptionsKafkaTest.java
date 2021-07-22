@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext
 @EmbeddedKafka(
         partitions = 1,
-        brokerProperties = {"listeners=PLAINTEXT://localhost:9093", "port=9093"})
+        brokerProperties = {"listeners=PLAINTEXT://localhost:9092", "port=9092"})
 @ActiveProfiles({"worker", "test", "kafka-test", "kafka-queue"})
 public class SyncSubscriptionsKafkaTest {
 
