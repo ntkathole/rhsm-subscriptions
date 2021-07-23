@@ -79,7 +79,7 @@ public class ResourceUtils {
    *
    * @return account number as a String
    */
-  static String getAccountNumber() {
+  public static String getAccountNumber() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     InsightsUserPrincipal principal = (InsightsUserPrincipal) auth.getPrincipal();
     return principal.getAccountNumber();
