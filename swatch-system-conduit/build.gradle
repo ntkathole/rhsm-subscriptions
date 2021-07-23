@@ -88,6 +88,7 @@ dependencies {
 
     testCompile "org.springframework.security:spring-security-test"
     testCompile "org.springframework.kafka:spring-kafka-test"
+    testCompile project(':swatch-core-test')
 
     runtime "org.hsqldb:hsqldb"
     runtime "org.jolokia:jolokia-core"
