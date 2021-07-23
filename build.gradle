@@ -189,6 +189,13 @@ dependencies {
     compile("org.jboss.resteasy:resteasy-spring-boot-starter") {
         exclude group: "org.springframework.boot"
     }
+    compile("io.confluent:kafka-avro-serializer") {
+        exclude group: "org.apache.kafka"
+        // A transitive dependency, org.apache.zookeeper:zookeeper, includes log4j as well as slf4j.  We use
+        // logback and SLF4J issues a warning if more than one logging implementation is on the classpath.
+        // Frowny face to Zookeeper for adding a logging implementation to a library jar.
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+    }
 
     compile "org.springframework.boot:spring-boot-starter-actuator"
     compile "org.springframework.boot:spring-boot-starter-aop"
