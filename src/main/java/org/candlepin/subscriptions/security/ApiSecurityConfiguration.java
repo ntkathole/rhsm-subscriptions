@@ -141,8 +141,7 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   // NOTE: intentionally *not* annotated with @Bean; @Bean causes an extra use as an application
   // filter
-  public AntiCsrfFilter antiCsrfFilter(
-      SecurityProperties secProps, ConfigurableEnvironment env) {
+  public AntiCsrfFilter antiCsrfFilter(SecurityProperties secProps, ConfigurableEnvironment env) {
     return new AntiCsrfFilter(secProps, env);
   }
 

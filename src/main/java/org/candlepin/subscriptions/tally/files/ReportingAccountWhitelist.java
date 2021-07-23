@@ -37,8 +37,8 @@ public class ReportingAccountWhitelist implements ResourceLoaderAware {
   private PerLineFileSource source;
   private boolean isDevMode;
 
-  public ReportingAccountWhitelist(ApplicationProperties props, SecurityProperties securityProps,
-      ApplicationClock clock) {
+  public ReportingAccountWhitelist(
+      ApplicationProperties props, SecurityProperties securityProps, ApplicationClock clock) {
     String resourceLocation = props.getReportingAccountWhitelistResourceLocation();
     source =
         resourceLocation != null

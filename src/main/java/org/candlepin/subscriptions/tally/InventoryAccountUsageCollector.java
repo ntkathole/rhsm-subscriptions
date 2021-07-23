@@ -254,7 +254,8 @@ public class InventoryAccountUsageCollector {
         .collect(Collectors.toList());
   }
 
-  public static void populateHostFieldsFromHbi(Host host, InventoryHostFacts inventoryHostFacts, NormalizedFacts normalizedFacts) {
+  public static void populateHostFieldsFromHbi(
+      Host host, InventoryHostFacts inventoryHostFacts, NormalizedFacts normalizedFacts) {
     if (inventoryHostFacts.getInventoryId() != null) {
       host.setInventoryId(inventoryHostFacts.getInventoryId().toString());
       // We assume that the instance ID for any given HBI host record is the inventory ID; compare
@@ -276,20 +277,23 @@ public class InventoryAccountUsageCollector {
     }
 
     if (normalizedFacts.getSockets() != null) {
-      host.getMeasurements().put(Measurement.Uom.SOCKETS, normalizedFacts.getSockets().doubleValue());
+      host.getMeasurements()
+          .put(Measurement.Uom.SOCKETS, normalizedFacts.getSockets().doubleValue());
     }
 
     host.setHypervisor(normalizedFacts.isHypervisor());
     host.setUnmappedGuest(normalizedFacts.isVirtual() && normalizedFacts.isHypervisorUnknown());
-    host.setCloudProvider(normalizedFacts.getCloudProviderType() == null
-        ? null
-        : normalizedFacts.getCloudProviderType().name());
+    host.setCloudProvider(
+        normalizedFacts.getCloudProviderType() == null
+            ? null
+            : normalizedFacts.getCloudProviderType().name());
 
     host.setLastSeen(inventoryHostFacts.getModifiedOn());
     host.setHardwareType(normalizedFacts.getHardwareType());
   }
 
-  public static Host hostFromHbiFacts(InventoryHostFacts inventoryHostFacts, NormalizedFacts normalizedFacts) {
+  public static Host hostFromHbiFacts(
+      InventoryHostFacts inventoryHostFacts, NormalizedFacts normalizedFacts) {
     Host host = new Host();
     host.setInstanceType("HBI_HOST");
     populateHostFieldsFromHbi(host, inventoryHostFacts, normalizedFacts);

@@ -87,7 +87,8 @@ public class RhsmSubscriptionsDataSourceConfiguration {
   }
 
   @Bean
-  public AccountListSource accountListSource(AccountConfigRepository accountConfigRepository, ApplicationClock clock) {
-      return new DatabaseAccountListSource(accountConfigRepository);
+  public AccountListSource accountListSource(
+      AccountConfigRepository accountConfigRepository, ApplicationClock clock) {
+    return new DatabaseAccountListSource(accountConfigRepository);
   }
 }
