@@ -22,6 +22,7 @@ package org.candlepin.subscriptions.security;
 
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,6 +31,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
+@ComponentScan("org.candlepin.subscriptions.security")
 public class SecurityConfig {
   public static final Marker SECURITY_STACKTRACE = MarkerFactory.getMarker("SECURITY_STACKTRACE");
 
