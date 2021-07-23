@@ -50,10 +50,8 @@ import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-//import org.candlepin.subscriptions.inventory.db.model.InventoryHostFacts;
 import org.candlepin.subscriptions.json.Measurement;
 import org.candlepin.subscriptions.json.Measurement.Uom;
-//import org.candlepin.subscriptions.tally.facts.NormalizedFacts;
 
 /**
  * Represents a reported Host from inventory. This entity stores normalized facts for a Host
