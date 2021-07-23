@@ -219,6 +219,7 @@ dependencies {
 
     testCompile "org.springframework.security:spring-security-test"
     testCompile "org.springframework.kafka:spring-kafka-test"
+    testCompile project(':swatch-core-test')
 
     runtime("org.jboss.resteasy:resteasy-validator-provider-11") {
         exclude group: 'org.hibernate' // exclude older hibernate validator
