@@ -21,6 +21,7 @@
 package org.candlepin.subscriptions.subscription;
 
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.candlepin.subscriptions.task.SyncSubscriptionsTask;
 import org.candlepin.subscriptions.util.KafkaConsumerRegistry;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;

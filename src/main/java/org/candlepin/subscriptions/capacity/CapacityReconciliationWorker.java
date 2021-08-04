@@ -21,6 +21,7 @@
 package org.candlepin.subscriptions.capacity;
 
 import lombok.extern.slf4j.Slf4j;
+import org.candlepin.subscriptions.task.ReconcileCapacityByOfferingTask;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.candlepin.subscriptions.util.KafkaConsumerRegistry;
 import org.candlepin.subscriptions.util.SeekableKafkaConsumer;

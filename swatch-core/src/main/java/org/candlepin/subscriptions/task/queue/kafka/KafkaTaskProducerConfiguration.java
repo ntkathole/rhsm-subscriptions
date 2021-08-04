@@ -23,12 +23,11 @@ package org.candlepin.subscriptions.task.queue.kafka;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.candlepin.subscriptions.capacity.ReconcileCapacityByOfferingTask;
 import org.candlepin.subscriptions.json.TallySummary;
-import org.candlepin.subscriptions.subscription.SyncSubscriptionsTask;
+import org.candlepin.subscriptions.task.ReconcileCapacityByOfferingTask;
+import org.candlepin.subscriptions.task.SyncSubscriptionsTask;
 import org.candlepin.subscriptions.task.queue.TaskQueue;
 import org.candlepin.subscriptions.task.queue.kafka.message.TaskMessage;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
@@ -39,6 +38,8 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * Configuration for a component that produces task messages onto a kafka topic.
@@ -52,7 +53,12 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 @Import(KafkaConfiguration.class)
 public class KafkaTaskProducerConfiguration {
 
-  @Autowired private KafkaConfigurator kafkaConfigurator;
+  private KafkaConfigurator kafkaConfigurator;
+
+  @Autowired
+  public KafkaTaskProducerConfiguration(KafkaConfigurator kafkaConfigurator) {
+    this.kafkaConfigurator = kafkaConfigurator;
+  }
 
   @Bean
   public ProducerFactory<String, TaskMessage> producerFactory(KafkaProperties kafkaProperties) {

@@ -21,6 +21,7 @@
 package org.candlepin.subscriptions.capacity;
 
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.candlepin.subscriptions.task.ReconcileCapacityByOfferingTask;
 import org.candlepin.subscriptions.util.KafkaConsumerRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;

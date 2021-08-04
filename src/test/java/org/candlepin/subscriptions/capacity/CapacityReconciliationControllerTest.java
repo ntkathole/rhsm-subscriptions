@@ -35,6 +35,7 @@ import org.candlepin.subscriptions.db.model.Subscription;
 import org.candlepin.subscriptions.db.model.SubscriptionCapacity;
 import org.candlepin.subscriptions.db.model.SubscriptionCapacityKey;
 import org.candlepin.subscriptions.resource.ResourceUtils;
+import org.candlepin.subscriptions.task.ReconcileCapacityByOfferingTask;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
