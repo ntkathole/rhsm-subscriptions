@@ -416,6 +416,7 @@ project(":rbac-client") {
     dependencies {
         compileOnly "org.springframework:spring-web"
         compileOnly "javax.servlet:javax.servlet-api"
+//        implementation project(':swatch-core')
     }
 }
 
