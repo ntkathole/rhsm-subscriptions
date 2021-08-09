@@ -5,3 +5,4 @@ include ':api', ':insights-inventory-client', ':rhsm-client', ':cloudigrade-clie
 include 'swatch-core'
 include ':swatch-core-test'
 include ':swatch-system-conduit'
+include ':swatch-api'
