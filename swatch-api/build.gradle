@@ -1,6 +1,13 @@
 plugins {
     id 'java'
+    id 'org.openapi.generator'
 }
+
+ext {
+    api_spec_path = "${projectDir}/rhsm-subscriptions-api-spec.yaml"
+    config_file = "${projectDir}/rhsm-subscriptions-api-config.json"
+}
+
 
 group 'org.candlepin'
 version '1.0.56'
@@ -10,13 +17,9 @@ repositories {
 }
 
 dependencies {
-
     implementation project(":swatch-core")
-
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-
-
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation 'org.springframework.boot:spring-boot-devtools'
     implementation "org.springframework.boot:spring-boot-starter-actuator"
@@ -31,11 +34,60 @@ dependencies {
     implementation "org.springframework.kafka:spring-kafka"
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.google.guava:guava:30.1.1-jre'
-
-
-
 }
 
 test {
     useJUnitPlatform()
 }
+
+openApiGenerate {
+    generatorName = "jaxrs-spec"
+    inputSpec = api_spec_path
+    configFile = config_file
+    outputDir = "$buildDir/generated"
+    configOptions = [
+            interfaceOnly: "true",
+            generatePom: "false",
+            dateLibrary: "java8",
+    ]
+}
+
+openApiValidate {
+    inputSpec = api_spec_path
+}
+
+task generateApiDocs(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+    generatorName = "html"
+    inputSpec = api_spec_path
+    outputDir = "$buildDir/docs"
+    generateApiDocumentation = true
+    generateModelDocumentation = true
+    generateModelTests = false
+    generateApiTests = false
+    withXml = false
+}
+
+task generateOpenApiJson(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+    generatorName = "openapi"
+    inputSpec = api_spec_path
+    outputDir = "$buildDir/generated/openapijson"
+    generateApiDocumentation = true
+    generateModelDocumentation = true
+    generateModelTests = false
+    generateApiTests = false
+    withXml = false
+}
+
+processResources {
+    from "$buildDir/generated/openapijson/openapi.json"
+    from api_spec_path
+    rename { String fileName ->
+        api_spec_path.endsWith(fileName) ? 'openapi.yaml' : fileName  // rename yaml to openapi.yaml
+    }
+}
+
+sourceSets.main.java.srcDirs += ["${buildDir}/generated/src/gen/java"]
+
+compileJava.dependsOn tasks.openApiGenerate
+processResources.dependsOn tasks.generateOpenApiJson
+
