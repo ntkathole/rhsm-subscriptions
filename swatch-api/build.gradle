@@ -9,10 +9,6 @@ ext {
     config_file = "${projectDir}/rhsm-subscriptions-api-config.json"
 }
 
-
-group 'org.candlepin'
-version '1.0.56'
-
 repositories {
     mavenCentral()
 }
@@ -40,7 +36,11 @@ dependencies {
     implementation "org.springframework.kafka:spring-kafka"
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.google.guava:guava:30.1.1-jre'
+
     implementation "org.jboss.resteasy:resteasy-spring-boot-starter"
+    implementation "org.webjars:swagger-ui"
+    implementation "org.webjars:webjars-locator"
+    implementation "io.swagger:swagger-annotations"
 
 
 }
