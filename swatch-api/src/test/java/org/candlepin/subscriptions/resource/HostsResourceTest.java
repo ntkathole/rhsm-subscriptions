@@ -20,51 +20,40 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-
-import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import org.candlepin.subscriptions.FixedClockConfiguration;
 import org.candlepin.subscriptions.db.AccountListSource;
 import org.candlepin.subscriptions.db.HostRepository;
-import org.candlepin.subscriptions.db.model.HardwareMeasurementType;
 import org.candlepin.subscriptions.db.model.Host;
-import org.candlepin.subscriptions.db.model.HostTallyBucket;
-import org.candlepin.subscriptions.db.model.InstanceMonthlyTotalKey;
-import org.candlepin.subscriptions.db.model.ServiceLevel;
-import org.candlepin.subscriptions.db.model.TallyHostView;
-import org.candlepin.subscriptions.db.model.Usage;
+import org.candlepin.subscriptions.db.model.*;
 import org.candlepin.subscriptions.json.Measurement;
 import org.candlepin.subscriptions.resteasy.PageLinkCreator;
 import org.candlepin.subscriptions.security.WithMockRedHatPrincipal;
 import org.candlepin.subscriptions.tally.AccountListSourceException;
 import org.candlepin.subscriptions.util.ApplicationClock;
-import org.candlepin.subscriptions.utilization.api.model.HostReport;
-import org.candlepin.subscriptions.utilization.api.model.HostReportSort;
-import org.candlepin.subscriptions.utilization.api.model.ProductId;
-import org.candlepin.subscriptions.utilization.api.model.ServiceLevelType;
-import org.candlepin.subscriptions.utilization.api.model.SortDirection;
-import org.candlepin.subscriptions.utilization.api.model.Uom;
-import org.candlepin.subscriptions.utilization.api.model.UsageType;
+import org.candlepin.subscriptions.utilization.api.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-@SpringBootTest
-@ActiveProfiles({"api", "test"})
+import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
+@SpringJUnitConfig
 @WithMockRedHatPrincipal("123456")
 class HostsResourceTest {
 
@@ -72,13 +61,15 @@ class HostsResourceTest {
   private static final String SANITIZED_MISSING_DISPLAY_NAME = "";
   private static final OffsetDateTime NULL_BEGINNING_ENDING_PARAM = null;
 
-  @MockBean HostRepository repository;
   @MockBean PageLinkCreator pageLinkCreator;
   @MockBean AccountListSource accountListSource;
-  @Autowired HostsResource resource;
+  @Mock HostRepository repository;
+
+  @InjectMocks HostsResource resource;
 
   @BeforeEach
   public void setup() throws AccountListSourceException {
+
     PageImpl<TallyHostView> mockPage = new PageImpl<>(Collections.emptyList());
     when(repository.getTallyHostViews(any(), any(), any(), any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(mockPage);

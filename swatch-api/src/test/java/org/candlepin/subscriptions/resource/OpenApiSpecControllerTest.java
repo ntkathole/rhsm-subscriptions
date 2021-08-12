@@ -20,17 +20,32 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@SpringBootTest
-@ActiveProfiles({"api", "test"})
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+@ExtendWith(SpringExtension.class)
 class OpenApiSpecControllerTest {
-  @Autowired OpenApiSpecController controller;
+
+  @Autowired
+  private ResourceLoader resourceLoader = null;
+
+  OpenApiSpecController controller;
+
+  @BeforeEach
+  void init() {
+    Resource yamlResource = resourceLoader.getResource("classpath:openapi.yaml");
+    Resource jsonResource = resourceLoader.getResource("classpath:openapi.json");
+
+    controller = new OpenApiSpecController(yamlResource, jsonResource);
+  }
 
   @Test
   void testOpenApiJson() {

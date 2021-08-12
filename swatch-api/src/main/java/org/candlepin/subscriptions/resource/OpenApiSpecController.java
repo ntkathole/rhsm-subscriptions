@@ -46,6 +46,11 @@ public class OpenApiSpecController {
   @Value("classpath:openapi.json")
   private Resource openApiJson;
 
+  public OpenApiSpecController(Resource openApiYaml, Resource openApiJson){
+    this.openApiYaml = openApiYaml;
+    this.openApiJson = openApiJson;
+  }
+
   private String getResourceAsString(Resource r) {
     try (InputStream is = r.getInputStream()) {
       return IOUtils.toString(is, StandardCharsets.UTF_8);

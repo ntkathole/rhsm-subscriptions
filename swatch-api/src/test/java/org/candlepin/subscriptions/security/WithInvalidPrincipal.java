@@ -18,19 +18,13 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.resource;
+package org.candlepin.subscriptions.security;
 
-import org.candlepin.subscriptions.utilization.api.resources.OpenapiYamlApi;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.security.test.context.support.WithSecurityContext;
 
-/** Serves the OpenAPI spec as /openapi.yaml. */
-@Component
-public class OpenApiYamlResource implements OpenapiYamlApi {
-  @Autowired OpenApiSpecController controller;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-  @Override
-  public String getOpenApiYaml() {
-    return controller.getOpenApiYaml();
-  }
-}
+@Retention(RetentionPolicy.RUNTIME)
+@WithSecurityContext(factory = WithInvalidPrincipalSecurityContextFactory.class)
+public @interface WithInvalidPrincipal {}

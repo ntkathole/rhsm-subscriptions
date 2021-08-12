@@ -18,19 +18,33 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.resource;
+package org.candlepin.subscriptions.security;
 
-import org.candlepin.subscriptions.utilization.api.resources.OpenapiJsonApi;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.security.test.context.support.WithSecurityContext;
 
-/** Serves the OpenAPI spec as /openapi.json. */
-@Component
-public class OpenApiJsonResource implements OpenapiJsonApi {
-  @Autowired OpenApiSpecController controller;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-  @Override
-  public String getOpenApiJson() {
-    return controller.getOpenApiJson();
-  }
+/**
+ * Creates a mock Red Hat principal for testing, with account$value and owner$value as account
+ * number and owner ID.
+ *
+ * <p>Defaults to granting ROLE_OPT_IN, but can be overridden.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@WithSecurityContext(factory = WithMockInsightsUserSecurityContextFactory.class)
+public @interface WithMockRedHatPrincipal {
+
+  /**
+   * Set account and ownerId to account$value and owner$value respectively.
+   *
+   * @return
+   */
+  String value() default "";
+
+  boolean nullifyAccount() default false;
+
+  boolean nullifyOwner() default false;
+
+  String[] roles() default {"ROLE_" + RoleProvider.SWATCH_ADMIN_ROLE};
 }

@@ -42,7 +42,7 @@ dependencies {
     implementation "org.webjars:webjars-locator"
     implementation "io.swagger:swagger-annotations"
 
-
+    testCompile "org.springframework.security:spring-security-test"
 }
 
 test {
