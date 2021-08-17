@@ -38,7 +38,6 @@ import org.candlepin.subscriptions.db.RhsmSubscriptionsDataSourceConfiguration;
 import org.candlepin.subscriptions.files.ProductMappingConfiguration;
 import org.candlepin.subscriptions.marketplace.MarketplaceWorkerConfiguration;
 import org.candlepin.subscriptions.metering.MeteringConfiguration;
-import org.candlepin.subscriptions.resource.ApiConfiguration;
 import org.candlepin.subscriptions.retention.PurgeSnapshotsConfiguration;
 import org.candlepin.subscriptions.security.SecurityConfig;
 import org.candlepin.subscriptions.subscription.SubscriptionServiceConfiguration;
@@ -64,7 +63,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 @Import({
-  ApiConfiguration.class,
   CapacityIngressConfiguration.class,
   CaptureSnapshotsConfiguration.class,
   CaptureHourlySnapshotsConfiguration.class,

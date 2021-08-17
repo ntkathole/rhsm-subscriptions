@@ -34,7 +34,6 @@ import org.springframework.context.annotation.Import;
  * <p>The API profile is responsible for handling customer-facing API requests.
  */
 @Configuration
-//@Profile("api")
 @ComponentScan(basePackages = "org.candlepin.subscriptions.resource")
 @Import({
   ResteasyConfiguration.class,

@@ -22,6 +22,7 @@ package org.candlepin.subscriptions.db;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.collect.ImmutableMap;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -43,7 +44,6 @@ import org.candlepin.subscriptions.db.model.TallyHostView;
 import org.candlepin.subscriptions.db.model.Usage;
 import org.candlepin.subscriptions.json.Measurement;
 import org.candlepin.subscriptions.json.Measurement.Uom;
-import org.candlepin.subscriptions.resource.HostsResource;
 import org.candlepin.subscriptions.utilization.api.model.HostReportSort;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -65,6 +65,47 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @TestInstance(Lifecycle.PER_CLASS)
 class HostRepositoryTest {
+
+  // TODO lburnett - these are duplicated from HostsResource
+  public static final Map<HostReportSort, String> HOST_SORT_PARAM_MAPPING =
+      ImmutableMap.<HostReportSort, String>builderWithExpectedSize(5)
+          .put(HostReportSort.DISPLAY_NAME, "host.displayName")
+          .put(HostReportSort.CORES, "cores")
+          .put(HostReportSort.HARDWARE_TYPE, "host.hardwareType")
+          .put(HostReportSort.SOCKETS, "sockets")
+          .put(HostReportSort.LAST_SEEN, "host.lastSeen")
+          .put(HostReportSort.MEASUREMENT_TYPE, "measurementType")
+          .build();
+
+  public static final Map<HostReportSort, String> INSTANCE_SORT_PARAM_MAPPING =
+      ImmutableMap.<HostReportSort, String>builder()
+          .put(HostReportSort.DISPLAY_NAME, "displayName")
+          .put(HostReportSort.LAST_SEEN, "lastSeen")
+          .put(HostReportSort.CORE_HOURS, "monthlyTotals")
+          .putAll(getUomSorts())
+          .build();
+
+  public static final Map<HostReportSort, Measurement.Uom> SORT_TO_UOM_MAP =
+      ImmutableMap.copyOf(getSortToUomMap());
+
+  private static Map<HostReportSort, Measurement.Uom> getSortToUomMap() {
+    return Arrays.stream(Measurement.Uom.values())
+        .filter(
+            uom ->
+                Arrays.stream(HostReportSort.values())
+                    .map(HostReportSort::toString)
+                    .collect(Collectors.toSet())
+                    .contains(uom.value().toLowerCase().replace('-', '_')))
+        .collect(
+            Collectors.toMap(
+                uom -> HostReportSort.fromValue(uom.value().toLowerCase().replace('-', '_')),
+                Function.identity()));
+  }
+
+  private static Map<HostReportSort, String> getUomSorts() {
+    return getSortToUomMap().keySet().stream()
+        .collect(Collectors.toMap(Function.identity(), key -> "monthlyTotals"));
+  }
 
   private final String RHEL = "RHEL";
   private final String COOL_PROD = "COOL_PROD";
@@ -455,7 +496,7 @@ class HostRepositoryTest {
                 0,
                 10,
                 Sort.Direction.ASC,
-                HostsResource.HOST_SORT_PARAM_MAPPING.get(HostReportSort.DISPLAY_NAME)));
+                HOST_SORT_PARAM_MAPPING.get(HostReportSort.DISPLAY_NAME)));
     List<TallyHostView> found = hosts.stream().collect(Collectors.toList());
 
     assertEquals(1, found.size());
@@ -478,7 +519,7 @@ class HostRepositoryTest {
                 0,
                 10,
                 Sort.Direction.ASC,
-                HostsResource.HOST_SORT_PARAM_MAPPING.get(HostReportSort.DISPLAY_NAME)));
+                HOST_SORT_PARAM_MAPPING.get(HostReportSort.DISPLAY_NAME)));
     List<TallyHostView> found = hosts.stream().collect(Collectors.toList());
 
     assertEquals(1, found.size());
@@ -498,10 +539,7 @@ class HostRepositoryTest {
             0,
             0,
             PageRequest.of(
-                0,
-                10,
-                Sort.Direction.ASC,
-                HostsResource.HOST_SORT_PARAM_MAPPING.get(HostReportSort.CORES)));
+                0, 10, Sort.Direction.ASC, HOST_SORT_PARAM_MAPPING.get(HostReportSort.CORES)));
     List<TallyHostView> found = hosts.stream().collect(Collectors.toList());
 
     assertEquals(1, found.size());
@@ -521,10 +559,7 @@ class HostRepositoryTest {
             0,
             0,
             PageRequest.of(
-                0,
-                10,
-                Sort.Direction.ASC,
-                HostsResource.HOST_SORT_PARAM_MAPPING.get(HostReportSort.SOCKETS)));
+                0, 10, Sort.Direction.ASC, HOST_SORT_PARAM_MAPPING.get(HostReportSort.SOCKETS)));
     List<TallyHostView> found = hosts.stream().collect(Collectors.toList());
 
     assertEquals(1, found.size());
@@ -544,10 +579,7 @@ class HostRepositoryTest {
             0,
             0,
             PageRequest.of(
-                0,
-                10,
-                Sort.Direction.ASC,
-                HostsResource.HOST_SORT_PARAM_MAPPING.get(HostReportSort.LAST_SEEN)));
+                0, 10, Sort.Direction.ASC, HOST_SORT_PARAM_MAPPING.get(HostReportSort.LAST_SEEN)));
     List<TallyHostView> found = hosts.stream().collect(Collectors.toList());
 
     assertEquals(1, found.size());
@@ -570,7 +602,7 @@ class HostRepositoryTest {
                 0,
                 10,
                 Sort.Direction.ASC,
-                HostsResource.HOST_SORT_PARAM_MAPPING.get(HostReportSort.HARDWARE_TYPE)));
+                HOST_SORT_PARAM_MAPPING.get(HostReportSort.HARDWARE_TYPE)));
     List<TallyHostView> found = hosts.stream().collect(Collectors.toList());
 
     assertEquals(1, found.size());
@@ -654,7 +686,7 @@ class HostRepositoryTest {
   }
 
   static HostReportSort[] instanceSortParams() {
-    return HostsResource.INSTANCE_SORT_PARAM_MAPPING.keySet().toArray(new HostReportSort[0]);
+    return INSTANCE_SORT_PARAM_MAPPING.keySet().toArray(new HostReportSort[0]);
   }
 
   @Transactional
@@ -662,9 +694,9 @@ class HostRepositoryTest {
   @MethodSource("org.candlepin.subscriptions.db.HostRepositoryTest#instanceSortParams")
   void canSortByInstanceBasedSortMethods(HostReportSort sort) {
 
-    String sortValue = HostsResource.INSTANCE_SORT_PARAM_MAPPING.get(sort);
+    String sortValue = INSTANCE_SORT_PARAM_MAPPING.get(sort);
     Pageable page = PageRequest.of(0, 2, Sort.by(sortValue));
-    Uom referenceUom = HostsResource.SORT_TO_UOM_MAP.getOrDefault(sort, Uom.CORES);
+    Uom referenceUom = SORT_TO_UOM_MAP.getOrDefault(sort, Uom.CORES);
     Page<Host> results =
         repo.findAllBy(
             "account123",
@@ -688,7 +720,7 @@ class HostRepositoryTest {
   }
 
   static String[] tallyViewSortParams() {
-    return HostsResource.HOST_SORT_PARAM_MAPPING.values().toArray(new String[0]);
+    return HOST_SORT_PARAM_MAPPING.values().toArray(new String[0]);
   }
 
   @Transactional
