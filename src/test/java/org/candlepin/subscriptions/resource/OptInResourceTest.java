@@ -42,7 +42,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 @WithMockRedHatPrincipal("123456")
 public class OptInResourceTest {
 

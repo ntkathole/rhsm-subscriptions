@@ -33,7 +33,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 public class VersionResourceTest {
   @MockBean BuildProperties buildProperties;
 

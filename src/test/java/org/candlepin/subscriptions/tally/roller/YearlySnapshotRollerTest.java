@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 // The transactional annotation will rollback the transaction at the end of every test.
 @Transactional
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 @TestInstance(Lifecycle.PER_CLASS)
 public class YearlySnapshotRollerTest {
 

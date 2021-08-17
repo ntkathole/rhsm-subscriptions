@@ -68,7 +68,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SuppressWarnings("linelength")
 @SpringBootTest
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 @WithMockRedHatPrincipal("123456")
 @Import(FixedClockConfiguration.class)
 public class TallyResourceTest {

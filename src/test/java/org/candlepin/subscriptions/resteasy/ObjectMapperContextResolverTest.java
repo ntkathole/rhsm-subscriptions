@@ -37,7 +37,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 @TestInstance(Lifecycle.PER_CLASS)
 class ObjectMapperContextResolverTest {
 

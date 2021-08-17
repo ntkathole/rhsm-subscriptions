@@ -55,7 +55,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @WithMockRedHatPrincipal("123456")
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 class CapacityResourceTest {
 
   private final OffsetDateTime min = OffsetDateTime.now().minusDays(4);

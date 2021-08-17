@@ -37,7 +37,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 /** A class to test the tag profile factory, parsing the tag profile. */
 @SpringBootTest
-@ActiveProfiles({"api", "test"})
+@ActiveProfiles("test")
 class TagProfileFactoryTest {
 
   @Autowired private TagProfile tagProfile;
