@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.candlepin.subscriptions.FixedClockConfiguration;
 import org.candlepin.subscriptions.db.model.Granularity;
+import org.candlepin.subscriptions.resource.ReportFiller;
+import org.candlepin.subscriptions.resource.ReportFillerFactory;
 import org.candlepin.subscriptions.util.ApplicationClock;
 import org.candlepin.subscriptions.utilization.api.model.TallyReport;
 import org.candlepin.subscriptions.utilization.api.model.TallySnapshot;

@@ -39,9 +39,6 @@ import org.candlepin.subscriptions.json.Measurement;
 import org.candlepin.subscriptions.json.Measurement.Uom;
 import org.candlepin.subscriptions.registry.ProductProfileRegistry;
 import org.candlepin.subscriptions.resteasy.PageLinkCreator;
-import org.candlepin.subscriptions.security.auth.ReportingAccessRequired;
-import org.candlepin.subscriptions.tally.filler.ReportFiller;
-import org.candlepin.subscriptions.tally.filler.ReportFillerFactory;
 import org.candlepin.subscriptions.util.ApplicationClock;
 import org.candlepin.subscriptions.utilization.api.model.GranularityType;
 import org.candlepin.subscriptions.utilization.api.model.ProductId;
@@ -80,7 +77,8 @@ public class TallyResource implements TallyApi {
 
   @SuppressWarnings("linelength")
   @Override
-  @ReportingAccessRequired
+  //TODO
+//  @ReportingAccessRequired
   public TallyReport getTallyReport(
       ProductId productId,
       @NotNull GranularityType granularityType,

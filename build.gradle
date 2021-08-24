@@ -173,7 +173,7 @@ dependencies {
     // code changes
     compile('org.springframework.boot:spring-boot-devtools')
 
-    compile project(":api")
+    compile project(":swatch-api")
     compile project(":insights-inventory-client")
     compile project(":rhsm-client")
     compile project(":cloudigrade-client")

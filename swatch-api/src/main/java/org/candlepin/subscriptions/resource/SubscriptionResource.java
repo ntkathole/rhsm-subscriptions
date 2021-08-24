@@ -22,7 +22,6 @@ package org.candlepin.subscriptions.resource;
 
 import java.time.OffsetDateTime;
 import javax.validation.constraints.Min;
-import org.candlepin.subscriptions.security.auth.ReportingAccessRequired;
 import org.candlepin.subscriptions.utilization.api.model.*;
 import org.candlepin.subscriptions.utilization.api.resources.SubscriptionsApi;
 import org.springframework.stereotype.Component;
@@ -37,7 +36,8 @@ public class SubscriptionResource implements SubscriptionsApi {
     this.subscriptionTableController = subscriptionTableController;
   }
 
-  @ReportingAccessRequired
+  //TODO auth
+//  @ReportingAccessRequired
   @Override
   public SkuCapacityReport getSkuCapacityReport(
       ProductId productId,
