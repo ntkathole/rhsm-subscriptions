@@ -20,11 +20,6 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.candlepin.subscriptions.resource.ResourceUtils.*;
-
-import java.time.OffsetDateTime;
-import java.util.*;
-import javax.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.candlepin.subscriptions.db.SubscriptionCapacityViewRepository;
 import org.candlepin.subscriptions.db.model.ServiceLevel;
@@ -35,6 +30,12 @@ import org.candlepin.subscriptions.utilization.api.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import javax.validation.constraints.Min;
+import java.time.OffsetDateTime;
+import java.util.*;
+
+import static org.candlepin.subscriptions.resource.ResourceUtils.*;
 
 @Service
 @Slf4j
@@ -96,8 +97,10 @@ public class SubscriptionTableController {
             reportStart,
             reportEnd);
 
+    log.info("Subscription capacities of size = {} for ownerId = {}, productId = {}", capacities.size(), getOwnerId(), productId.toString());
     Map<String, SkuCapacity> inventories = new HashMap<>();
     for (SubscriptionCapacityView subscriptionCapacityView : capacities) {
+      log.info("SubscriptionCapacityView = {}", subscriptionCapacityView);
       String sku = subscriptionCapacityView.getSku();
       final SkuCapacity inventory =
           inventories.computeIfAbsent(
@@ -108,6 +111,7 @@ public class SubscriptionTableController {
     }
 
     List<SkuCapacity> reportItems = new ArrayList<>(inventories.values());
+    log.info("Report Items aggregated from Subscription Capacity View = {}", reportItems);
     // The pagination and sorting of capacities is done in memory and can cause performance
     // issues
     // As an improvement this should be pushed lower into the Repository layer
