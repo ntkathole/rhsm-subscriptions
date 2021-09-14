@@ -20,32 +20,15 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
-import javax.ws.rs.BadRequestException;
-import org.candlepin.subscriptions.FixedClockConfiguration;
-import org.candlepin.subscriptions.db.model.config.OptInType;
-import org.candlepin.subscriptions.security.OptInController;
 import org.candlepin.subscriptions.security.WithMockRedHatPrincipal;
-import org.candlepin.subscriptions.tally.files.ReportingAccountWhitelist;
-import org.candlepin.subscriptions.util.ApplicationClock;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles({"api", "test"})
 @WithMockRedHatPrincipal("123456")
 public class OptInResourceTest {
-
+/*
   private ApplicationClock clock;
 
   @MockBean private ReportingAccountWhitelist accountWhitelist;
@@ -157,4 +140,5 @@ public class OptInResourceTest {
   public void testAccessDeniedForOptInWhenUserIsNotAnAdmin() {
     assertThrows(AccessDeniedException.class, () -> resource.putOptInConfig(true, true, true));
   }
+ */
 }

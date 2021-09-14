@@ -51,6 +51,15 @@ project(":clients:marketplace-client") {
     }
 }
 
+project (":clients:opt-in-client") {
+    apply plugin: "org.openapi.generator"
+
+    ext {
+        api_spec_path = "${rootDir}/opt-in/api/opt-in-api-spec.yaml"
+        config_file = "${projectDir}/opt-in-client-config.json"
+    }
+}
+
 project(":clients:product-client") {
     apply plugin: "org.openapi.generator"
 
@@ -166,8 +175,8 @@ configure(subprojects) {
         compile "org.springframework:spring-context"
         compile "org.slf4j:slf4j-api"
         compile "io.swagger:swagger-annotations"
-        compile "com.google.code.findbugs:jsr305:3.0.2"
-        compile "org.openapitools:jackson-databind-nullable:0.2.1"
+        compile "com.google.code.findbugs:jsr305"
+        compile "org.openapitools:jackson-databind-nullable"
     }
 
     sourceSets.main.java.srcDirs += "${buildDir}/generated/src/main/java"

@@ -18,13 +18,15 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.jmx;
+package org.candlepin.subscriptions.opt_in;
 
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** Configuration that provides admin JMX beans for tally and other functions. */
-@Configuration
-@ComponentScan(basePackages = "org.candlepin.subscriptions.jmx")
-public class JmxBeansConfiguration {
+@Getter
+@Setter
+@ConfigurationProperties(prefix = "rhsm-subscriptions.opt-in")
+public class OptInServiceProperties {
+  private boolean prettyPrintJson = false;
 }

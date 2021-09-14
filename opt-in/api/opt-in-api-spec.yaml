@@ -1,0 +1,241 @@
+openapi: "3.0.2"
+info:
+  title: "opt-in-api"
+  description: "API specification for Opt In microservice"
+  version: 1.0.0
+
+paths:
+  /opt-in:
+    description: "Endpoint for opting into subscription watch."
+    get:
+      summary: "Get the opt-in configuration for the current account."
+      operationId: getOptInConfig
+      responses:
+        '200':
+          description: "The request for the account's opt-in configuration was successful."
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/OptInConfig"
+              example:
+                data:
+                  opt_in_complete: true
+                  account:
+                    account_number: 12345
+                    tally_sync_enabled: true
+                    tally_reporting_enabled: true
+                    opt_in_type: 'API'
+                    created: '2017-08-04T17:32:05Z'
+                    last_updated: '2017-08-04T17:32:05Z'
+                  org:
+                    org_id: 1111
+                    conduit_sync_enabled: true
+                    opt_in_type: 'API'
+                    created: '2017-08-04T17:32:05Z'
+                    last_updated: '2017-08-04T17:32:05Z'
+                meta:
+                  account_number: 12345
+                  org_id: 1111
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResourceNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: "Create/Update an account's opt-in configuration. Account and Org ID are defined by the
+               identity header. If no parameters are specified, all everything will be enabled."
+      operationId: putOptInConfig
+      parameters:
+        - name: enable_tally_sync
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: enable_tally_reporting
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: enable_conduit_sync
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: "The request for the account's opt-in configuration was successful."
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/OptInConfig"
+              example:
+                data:
+                  opt_in_complete: true
+                  account:
+                    account_number: 12345
+                    tally_sync_enabled: true
+                    tally_reporting_enabled: true
+                    opt_in_type: 'API'
+                    created: '2017-08-04T17:32:05Z'
+                    last_updated: '2017-08-04T17:32:05Z'
+                  org:
+                    org_id: 1111
+                    conduit_sync_enabled: true
+                    opt_in_type: 'API'
+                    created: '2017-08-04T17:32:05Z'
+                    last_updated: '2017-08-04T17:32:05Z'
+                meta:
+                  account_number: 12345
+                  org_id: 1111
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResourceNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: "Delete an opt-in config for the associated account/org. The account number and org ID are
+               pulled from the identity header."
+      operationId: deleteOptInConfig
+      responses:
+        '204':
+          description: "Successfully deleted the opt-in configuration for the accociated account/org"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResourceNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  responses:
+    InternalServerError:
+      description: "An internal server error has occurred and is not recoverable."
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+    BadRequest:
+      description: "The server could could not process the current request."
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+    Forbidden:
+      description: "The request was valid, but the request was refused by the server."
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+    ResourceNotFound:
+      description: "The requested resource was not found."
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+    ServiceUnavailable:
+      description: "The server is currently unavailable."
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+  schemas:
+    Errors:
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+    Error:
+      required:
+        - status
+        - code
+        - title
+      properties:
+        status:
+          type: string
+        code:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+    OptInConfig:
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          type: object
+          required:
+            - account_number
+            - org_id
+          properties:
+            account_number:
+              type: string
+            org_id:
+              type: string
+        data:
+          type: object
+          required:
+            - opt_in_complete
+          properties:
+            opt_in_complete:
+              type: boolean
+            account:
+              type: object
+              required:
+                - account_number
+                - tally_sync_enabled
+                - tally_reporting_enabled
+                - opt_in_type
+                - created
+                - last_updated
+              properties:
+                account_number:
+                  type: string
+                tally_sync_enabled:
+                  type: boolean
+                tally_reporting_enabled:
+                  type: boolean
+                opt_in_type:
+                  type: string
+                created:
+                  type: string
+                  format: date-time
+                last_updated:
+                  type: string
+                  format: date-time
+            org:
+              type: object
+              required:
+                - org_id
+                - conduit_sync_enabled
+                - opt_in_type
+                - created
+                - last_updated
+              properties:
+                org_id:
+                  type: string
+                conduit_sync_enabled:
+                  type: boolean
+                opt_in_type:
+                  type: string
+                created:
+                  type: string
+                  format: date-time
+                last_updated:
+                  type: string
+                  format: date-time

@@ -1,0 +1,90 @@
+project (":opt-in:api") {
+    apply plugin: "org.openapi.generator"
+
+    ext {
+        api_spec_path = "${projectDir}/opt-in-api-spec.yaml"
+    }
+
+    openApiValidate {
+        inputSpec = api_spec_path
+    }
+
+    task generateApiDocs(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+        generatorName = "html"
+        inputSpec = api_spec_path
+        outputDir = "$buildDir/docs"
+        generateApiDocumentation = true
+        generateModelDocumentation = true
+        generateModelTests = false
+        generateApiTests = false
+        withXml = false
+    }
+
+    openApiGenerate {
+        inputSpec = api_spec_path
+        outputDir = "${buildDir}/generated"
+        generatorName = "spring"
+        configOptions = [
+                modelPackage: "org.candlepin.subscriptions.opt_in.api.model",
+                apiPackage: "org.candlepin.subscriptions.opt_in.api.resources",
+                configPackage: "org.candlepin.subscriptions.opt_in.config",
+                invokerPackage: "org.candlepin.subscriptions.opt_in",
+                groupId: "org.candlepin",
+                artifactId: "opt-in-server",
+                generatePom: "false",
+                interfaceOnly: "true",
+                java8: "true",
+                dateLibrary: "java8"
+        ]
+    }
+
+    dependencies {
+        implementation project(":swatch-core")
+
+        implementation "javax.validation:validation-api"
+        implementation "javax.servlet:javax.servlet-api"
+
+        implementation "com.fasterxml.jackson.core:jackson-annotations"
+        implementation "com.fasterxml.jackson.core:jackson-databind"
+        implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+
+        implementation "org.springframework:spring-context"
+        implementation "org.springframework:spring-web"
+
+        implementation "io.swagger:swagger-annotations"
+        implementation "io.springfox:springfox-core"
+        implementation "com.google.code.findbugs:jsr305"
+        implementation "org.openapitools:jackson-databind-nullable"
+    }
+
+    sourceSets.main.java.srcDirs += "${buildDir}/generated/src/main/java"
+
+    compileJava.dependsOn tasks.openApiGenerate
+}
+
+project (":opt-in:service") {
+    dependencies {
+        implementation project(":swatch-core")
+        implementation project(":opt-in:api")
+        implementation project(":client-services:user-client-service")
+
+        implementation "org.springframework.boot:spring-boot-starter-actuator"
+        implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+        implementation "org.springframework.boot:spring-boot-starter-web"
+
+        implementation "org.hibernate.validator:hibernate-validator"
+
+        // TODO DRY this
+        implementation "com.fasterxml.jackson.core:jackson-annotations"
+        implementation "com.fasterxml.jackson.core:jackson-databind"
+        implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+        implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations"
+
+        implementation "org.webjars:swagger-ui"
+        implementation "org.webjars:webjars-locator"
+
+        implementation "org.postgresql:postgresql"
+
+        implementation "org.slf4j:slf4j-api"
+    }
+}

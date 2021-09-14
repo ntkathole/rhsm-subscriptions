@@ -1,0 +1,8 @@
+{
+  "modelPackage": "org.candlepin.subscriptions.opt_in.api.model",
+  "apiPackage": "org.candlepin.subscriptions.opt_in.api.resources",
+  "invokerPackage": "org.candlepin.subscriptions.opt_in",
+  "groupId": "org.candlepin",
+  "artifactId": "opt-in-client",
+  "java8": true
+}

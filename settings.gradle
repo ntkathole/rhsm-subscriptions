@@ -1,16 +1,26 @@
 rootProject.name = 'rhsm-subscriptions'
 include ':api'
+
+include ':client-services'
+include ':client-services:user-client-service'
+
 include ':clients'
 include ':clients:cloudigrade-client'
 include ':clients:insights-inventory-client'
 include ':clients:marketplace-client'
+include ':clients:opt-in-client'
 include ':clients:product-client'
 include ':clients:prometheus-client'
 include ':clients:rbac-client'
 include ':clients:rhsm-client'
 include ':clients:subscription-client'
 include ':clients:user-client'
+
 include ':kafka-schema'
 include ':swatch-core'
 include ':swatch-core-test'
 include ':swatch-system-conduit'
+
+include ':opt-in'
+include ':opt-in:api'
+include ':opt-in:service'

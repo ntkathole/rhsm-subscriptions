@@ -18,13 +18,19 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.jmx;
+package org.candlepin.subscriptions.opt_in.db.model;
 
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+/** How the particular account was opted in. */
+public enum OptInType {
+  /** Manually via the DB itself. */
+  DB,
 
-/** Configuration that provides admin JMX beans for tally and other functions. */
-@Configuration
-@ComponentScan(basePackages = "org.candlepin.subscriptions.jmx")
-public class JmxBeansConfiguration {
+  /** Configured via the JMX bean. */
+  JMX,
+
+  /** Configured by an admin via the API. */
+  API,
+
+  /** Configured via prometheus detection. */
+  PROMETHEUS
 }

@@ -18,18 +18,18 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
-package org.candlepin.subscriptions.jmx;
+package org.candlepin.subscriptions.opt_in.jmx;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import org.candlepin.subscriptions.db.AccountConfigRepository;
-import org.candlepin.subscriptions.db.model.config.OptInType;
+import org.candlepin.subscriptions.opt_in.api.model.OptInConfig;
+import org.candlepin.subscriptions.opt_in.dao.OptInDao;
+import org.candlepin.subscriptions.opt_in.db.model.OptInType;
 import org.candlepin.subscriptions.resource.ResourceUtils;
-import org.candlepin.subscriptions.security.OptInController;
 import org.candlepin.subscriptions.util.ApplicationClock;
-import org.candlepin.subscriptions.utilization.api.model.OptInConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
@@ -44,13 +44,13 @@ import org.springframework.stereotype.Component;
 public class OptInJmxBean {
   private static final Logger log = LoggerFactory.getLogger(OptInJmxBean.class);
 
-  private final OptInController controller;
+  private final OptInDao optInDao;
   private final ApplicationClock clock;
   private final AccountConfigRepository repo;
 
   public OptInJmxBean(
-      OptInController controller, ApplicationClock clock, AccountConfigRepository repo) {
-    this.controller = controller;
+      OptInDao optInDao, ApplicationClock clock, AccountConfigRepository repo) {
+    this.optInDao = optInDao;
     this.clock = clock;
     this.repo = repo;
   }
@@ -59,19 +59,19 @@ public class OptInJmxBean {
   @ManagedOperationParameter(name = "accountNumber", description = "Red Hat Account Number")
   @ManagedOperationParameter(name = "orgId", description = "Red Hat Org ID")
   public String getOptInConfig(String accountNumber, String orgId) {
-    return controller.getOptInConfig(accountNumber, orgId).toString();
+    return optInDao.getOptInConfig(accountNumber, orgId).toString();
   }
 
   @ManagedOperation(description = "Fetch an opt in configuration (given only the account number)")
   @ManagedOperationParameter(name = "accountNumber", description = "Red Hat Account Number")
   public String getOptInConfigForAccountNumber(String accountNumber) {
-    return controller.getOptInConfigForAccountNumber(accountNumber).toString();
+    return optInDao.getOptInConfigForAccountNumber(accountNumber).toString();
   }
 
   @ManagedOperation(description = "Fetch an opt in configuration (given only the org ID)")
   @ManagedOperationParameter(name = "orgId", description = "Red Hat Org ID")
   public String getOptInConfigForOrgId(String orgId) {
-    return controller.getOptInConfigForOrgId(orgId).toString();
+    return optInDao.getOptInConfigForOrgId(orgId).toString();
   }
 
   @ManagedOperation(description = "Delete opt in configuration")
@@ -80,7 +80,7 @@ public class OptInJmxBean {
   public void optOut(String accountNumber, String orgId) {
     Object principal = ResourceUtils.getPrincipal();
     log.info("Opt out for {} triggered via JMX by {}", accountNumber, principal);
-    controller.optOut(accountNumber, orgId);
+    optInDao.optOut(accountNumber, orgId);
   }
 
   @ManagedOperation(
@@ -101,7 +101,7 @@ public class OptInJmxBean {
         "Opt in for account {}, org {} triggered via JMX by {}", accountNumber, orgId, principal);
     log.debug("Creating OptInConfig over JMX for account {}, org {}", accountNumber, orgId);
     OptInConfig config =
-        controller.optIn(
+        optInDao.optIn(
             accountNumber,
             orgId,
             OptInType.JMX,
@@ -119,7 +119,7 @@ public class OptInJmxBean {
       boolean enableTallySync,
       boolean enableTallyReporting,
       boolean enableConduitSync) {
-    controller.optInByAccountNumber(
+    optInDao.optInByAccountNumber(
         accountNumber, OptInType.JMX, enableTallySync, enableTallyReporting, enableConduitSync);
     return String.format("Completed opt in for account %s", accountNumber);
   }
@@ -130,7 +130,7 @@ public class OptInJmxBean {
       boolean enableTallySync,
       boolean enableTallyReporting,
       boolean enableConduitSync) {
-    controller.optInByOrgId(
+    optInDao.optInByOrgId(
         orgId, OptInType.JMX, enableTallySync, enableTallyReporting, enableConduitSync);
     return String.format("Completed opt in for orgId %s", orgId);
   }
