@@ -110,18 +110,18 @@ public class SubscriptionSyncController {
       return;
     }
 
-    log.debug("Syncing subscription from external service={}", subscription);
+    log.info("Syncing subscription from external service={}", subscription);
     // TODO: https://issues.redhat.com/browse/ENT-4029 //NOSONAR
     final Optional<org.candlepin.subscriptions.db.model.Subscription> subscriptionOptional =
         subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
 
     final org.candlepin.subscriptions.db.model.Subscription newOrUpdated = convertDto(subscription);
-    log.debug("New subscription that will need to be saved={}", newOrUpdated);
+    log.info("New subscription that will need to be saved={}", newOrUpdated);
 
     if (subscriptionOptional.isPresent()) {
       final org.candlepin.subscriptions.db.model.Subscription existingSubscription =
           subscriptionOptional.get();
-      log.debug("Existing subscription in DB={}", existingSubscription);
+      log.info("Existing subscription in DB={}", existingSubscription);
       if (!existingSubscription.equals(newOrUpdated)) {
         if (existingSubscription.quantityHasChanged(newOrUpdated.getQuantity())) {
           existingSubscription.endSubscription();
@@ -154,6 +154,7 @@ public class SubscriptionSyncController {
   @Transactional
   public void syncSubscription(String subscriptionId) {
     Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+    log.info("Fetched subscription from external service={}", subscription);
     syncSubscription(subscription);
   }
 

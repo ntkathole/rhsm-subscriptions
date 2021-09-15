@@ -23,14 +23,10 @@ package org.candlepin.subscriptions.capacity;
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.candlepin.subscriptions.ApplicationProperties;
 import org.candlepin.subscriptions.capacity.files.ProductWhitelist;
 import org.candlepin.subscriptions.db.SubscriptionCapacityRepository;
@@ -38,15 +34,12 @@ import org.candlepin.subscriptions.db.model.SubscriptionCapacity;
 import org.candlepin.subscriptions.db.model.SubscriptionCapacityKey;
 import org.candlepin.subscriptions.subscription.SubscriptionSyncController;
 import org.candlepin.subscriptions.utilization.api.model.CandlepinPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /** Controller for ingesting subscription information from Candlepin pools. */
 @Component
+@Slf4j
 public class PoolIngressController {
-
-  private static final Logger log = LoggerFactory.getLogger(PoolIngressController.class);
 
   private final SubscriptionCapacityRepository subscriptionCapacityRepository;
   private final CandlepinPoolCapacityMapper capacityMapper;
@@ -83,6 +76,7 @@ public class PoolIngressController {
   @Timed("rhsm-subscriptions.capacity.ingress")
   public void updateCapacityForOrg(String orgId, List<CandlepinPool> pools) {
     if (applicationProperties.isSubscriptionSyncEnabled()) {
+      log.info("Subscription sync from subcription service is now enabled");
       updateSubscriptionsAndCapacityFromSubscriptions(orgId, pools);
     } else {
       updateCapacityFromPools(orgId, pools);
@@ -94,6 +88,7 @@ public class PoolIngressController {
       String orgId, List<CandlepinPool> pools) {
     final List<String> subscriptionIds =
         pools.stream().map(CandlepinPool::getSubscriptionId).collect(Collectors.toList());
+    log.info("Subscription Ids to refresh={}", subscriptionIds);
     subscriptionIds.forEach(subscriptionSyncController::syncSubscription);
   }
 
