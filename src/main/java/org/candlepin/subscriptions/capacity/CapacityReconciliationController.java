@@ -93,6 +93,7 @@ public class CapacityReconciliationController {
   public void reconcileCapacityForSubscription(Subscription subscription) {
 
     Collection<SubscriptionCapacity> newCapacities = mapSubscriptionToCapacities(subscription);
+    log.info("Capacities to reconcile={}", newCapacities);
     reconcileSubscriptionCapacities(
         newCapacities, subscription.getSubscriptionId(), subscription.getSku());
   }
