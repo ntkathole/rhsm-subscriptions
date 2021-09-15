@@ -61,6 +61,7 @@ spring:
     enabled: ${JMX_ENABLED}
   # general hibernate configurations
   jpa:
+    show-sql: true
     properties:
       hibernate:
         jdbc:

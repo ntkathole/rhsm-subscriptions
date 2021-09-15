@@ -20,16 +20,12 @@
  */
 package org.candlepin.subscriptions.db.model;
 
-import java.io.Serializable;
-import java.util.Objects;
+import lombok.*;
+
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.io.Serializable;
+import java.util.Objects;
 
 /** Primary key for record of capacity provided by a subscription for a given product. */
 @Getter
@@ -38,6 +34,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@ToString
 public class SubscriptionCapacityKey implements Serializable {
 
   @Column(name = "owner_id")

@@ -20,11 +20,6 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.candlepin.subscriptions.resource.ResourceUtils.*;
-
-import java.time.OffsetDateTime;
-import java.util.*;
-import javax.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.candlepin.subscriptions.db.SubscriptionCapacityViewRepository;
 import org.candlepin.subscriptions.db.model.ServiceLevel;
@@ -35,6 +30,12 @@ import org.candlepin.subscriptions.utilization.api.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import javax.validation.constraints.Min;
+import java.time.OffsetDateTime;
+import java.util.*;
+
+import static org.candlepin.subscriptions.resource.ResourceUtils.*;
 
 @Service
 @Slf4j
@@ -95,6 +96,7 @@ public class SubscriptionTableController {
             sanitizedUsage,
             reportStart,
             reportEnd);
+    log.info("Capacities from repository={}", capacities);
 
     Map<String, SkuCapacity> inventories = new HashMap<>();
     for (SubscriptionCapacityView subscriptionCapacityView : capacities) {
@@ -194,7 +196,7 @@ public class SubscriptionTableController {
 
   public void addTotalCapacity(
       SubscriptionCapacityView subscriptionCapacityView, SkuCapacity skuCapacity) {
-    log.debug(
+    log.info(
         "Calculating total capacity using sku capacity {} and subscription capacity view {}",
         skuCapacity,
         subscriptionCapacityView);
