@@ -47,6 +47,7 @@ class UpstreamProductData {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamProductData.class);
   private static final String MSG_TEMPLATE =
       "offeringSku=\"%s\" already has field=%s original=\"%s\" so will ignore value=\"%s\".";
+  private static final String PRODUCT_ATTRIBUTE_VALUE_UNLIMITED = "UNLIMITED";
   private static final int CONVERSION_RATIO_IFL_TO_CORES = 4;
 
   /** List of opProd attribute codes used in the making of an Offering. */
@@ -266,6 +267,16 @@ class UpstreamProductData {
   }
 
   private void calcCapacityForOffering(Offering offering) {
+    if (PRODUCT_ATTRIBUTE_VALUE_UNLIMITED.equalsIgnoreCase(attrs.get(Attr.IFL))
+        || PRODUCT_ATTRIBUTE_VALUE_UNLIMITED.equalsIgnoreCase(attrs.get(Attr.CORES))
+        || PRODUCT_ATTRIBUTE_VALUE_UNLIMITED.equalsIgnoreCase(attrs.get(Attr.SOCKET_LIMIT))) {
+      // TODO https://issues.redhat.com/browse/ENT-3230
+      throw new UnsupportedOperationException(
+          "offeringSku="
+              + offering.getSku()
+              + " has an unlimited socket or cores value which is not yet supported. See ENT-3230.");
+    }
+
     // If IFL attr is defined, use it...
     Integer cores =
         Optional.ofNullable(attrs.get(Attr.IFL))

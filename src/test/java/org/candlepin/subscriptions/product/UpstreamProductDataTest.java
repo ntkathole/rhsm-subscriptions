@@ -21,6 +21,7 @@
 package org.candlepin.subscriptions.product;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
@@ -151,7 +152,7 @@ class UpstreamProductDataTest {
 
   @Test
   void testOfferingFromUpstreamWithIflAttrCode() {
-    // Given a marketing SKU wiht attribute code "IFL" in its tree (in this case, in SVCMPV4)
+    // Given a marketing SKU with attribute code "IFL" in its tree (in this case, in SVCMPV4)
     var sku = "RH3413336";
     var expected = new Offering();
     expected.setSku(sku);
@@ -186,5 +187,49 @@ class UpstreamProductDataTest {
 
     // Then there is no resulting offering.
     assertTrue(actual.isEmpty(), "When a sku doesn't exist upstream, return an empty Optional.");
+  }
+
+  @Test
+  void testOfferingFromUpstreamForOfferingWithUnlimitedSockets() {
+    // Given a marketing SKU that has unlimited number of sockets,
+    var sku = "ESA0055";
+    var expected = new Offering();
+    expected.setSku(sku);
+    expected.setChildSkus(Set.of("SVCESA0055"));
+    expected.setProductIds(
+        Set.of(
+            69, 70, 84, 86, 91, 92, 93, 94, 127, 133, 176, 180, 182, 201, 205, 240, 246, 271, 272,
+            273, 274, 317, 318, 394, 395, 408, 479, 491, 588, 605));
+    expected.setProductFamily("RHEL");
+    expected.setProductName("RHEL for SAP HANA");
+    expected.setServiceLevel(ServiceLevel.PREMIUM);
+
+    // When getting the upstream Offering,
+    // Then an exception is thrown because unlimited is not yet supported for capacity.
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> UpstreamProductData.offeringFromUpstream(sku, stub));
+  }
+
+  @Test
+  void testOfferingFromUpstreamForOfferingWithUnlimitedCores() {
+    // Given a marketing SKU that has unlimited number of cores,
+    var sku = "ESA0052";
+    var expected = new Offering();
+    expected.setSku(sku);
+    expected.setChildSkus(Set.of("SVCESA0052"));
+    expected.setProductIds(
+        Set.of(
+            69, 70, 167, 180, 185, 193, 194, 197, 201, 205, 240, 271, 290, 303, 311, 317, 318, 326,
+            329, 408, 458, 473, 479, 491, 518, 519, 546, 579, 588, 603, 604, 608));
+    expected.setProductFamily("OpenShift Enterprise");
+    expected.setProductName("OpenShift Node");
+    expected.setServiceLevel(ServiceLevel.PREMIUM);
+
+    // When getting the upstream Offering,
+    // Then an exception is thrown because unlimited is not yet supported for capacity.
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> UpstreamProductData.offeringFromUpstream(sku, stub));
   }
 }
