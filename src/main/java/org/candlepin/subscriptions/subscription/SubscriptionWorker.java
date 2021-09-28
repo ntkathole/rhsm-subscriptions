@@ -34,14 +34,10 @@ import org.springframework.stereotype.Service;
 @Profile("capacity-ingress")
 public class SubscriptionWorker extends SeekableKafkaConsumer {
 
-  SubscriptionSyncController subscriptionSyncController;
-
   protected SubscriptionWorker(
       @Qualifier("syncSubscriptionTasks") TaskQueueProperties taskQueueProperties,
-      KafkaConsumerRegistry kafkaConsumerRegistry,
-      SubscriptionSyncController subscriptionSyncController) {
+      KafkaConsumerRegistry kafkaConsumerRegistry) {
     super(taskQueueProperties, kafkaConsumerRegistry);
-    this.subscriptionSyncController = subscriptionSyncController;
   }
 
   @KafkaListener(
@@ -49,11 +45,6 @@ public class SubscriptionWorker extends SeekableKafkaConsumer {
       topics = "#{__listener.topic}",
       containerFactory = "subscriptionSyncListenerContainerFactory")
   public void receive(SyncSubscriptionsTask syncSubscriptionsTask) {
-    log.info(
-        "Subscription Worker is syncing subs with values: {} ", syncSubscriptionsTask.toString());
-    subscriptionSyncController.syncSubscriptions(
-        syncSubscriptionsTask.getOrgId(),
-        syncSubscriptionsTask.getOffset(),
-        syncSubscriptionsTask.getLimit());
+    log.info("Subscription Worker is discarding task: {}", syncSubscriptionsTask);
   }
 }
