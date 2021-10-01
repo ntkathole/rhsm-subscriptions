@@ -90,64 +90,78 @@ public class SubscriptionSyncController {
 
   @Transactional
   public void syncSubscription(Subscription subscription) {
-    String sku = sku(subscription);
+    try (var sw =
+        Stoppywatch.elapse(log, String.format("syncSubscription(%s)", subscription.getId()))) {
+      Stoppywatch.split("get sku");
+      String sku = sku(subscription);
 
-    if (!productWhitelist.productIdMatches(sku)) {
-      log.info(
-          "Sku {} not on allowlist, skipping subscription sync for subscriptionId: {} in org: {} ",
-          sku,
-          subscription.getId(),
-          subscription.getWebCustomerId());
-      return;
-    }
+      Stoppywatch.split("productIdMatches");
+      if (!productWhitelist.productIdMatches(sku)) {
+        log.info(
+            "Sku {} not on allowlist, skipping subscription sync for subscriptionId: {} in org: {} ",
+            sku,
+            subscription.getId(),
+            subscription.getWebCustomerId());
+        return;
+      }
 
-    if (!offeringRepository.existsById(sku)) {
-      log.info(
-          "Sku={} not in Offering repository, skipping subscription sync for subscriptionId={} in org={}",
-          sku,
-          subscription.getId(),
-          subscription.getWebCustomerId());
-      return;
-    }
+      Stoppywatch.split("existsById");
+      if (!offeringRepository.existsById(sku)) {
+        log.info(
+            "Sku={} not in Offering repository, skipping subscription sync for subscriptionId={} in org={}",
+            sku,
+            subscription.getId(),
+            subscription.getWebCustomerId());
+        return;
+      }
 
-    log.debug("Syncing subscription from external service={}", subscription);
-    // TODO: https://issues.redhat.com/browse/ENT-4029 //NOSONAR
-    final Optional<org.candlepin.subscriptions.db.model.Subscription> subscriptionOptional =
-        subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
+      Stoppywatch.split("findActiveSubscription");
+      log.debug("Syncing subscription from external service={}", subscription);
+      // TODO: https://issues.redhat.com/browse/ENT-4029 //NOSONAR
+      final Optional<org.candlepin.subscriptions.db.model.Subscription> subscriptionOptional =
+          subscriptionRepository.findActiveSubscription(String.valueOf(subscription.getId()));
 
-    final org.candlepin.subscriptions.db.model.Subscription newOrUpdated = convertDto(subscription);
-    log.debug("New subscription that will need to be saved={}", newOrUpdated);
+      Stoppywatch.split("convertDto");
+      final org.candlepin.subscriptions.db.model.Subscription newOrUpdated =
+          convertDto(subscription);
+      log.debug("New subscription that will need to be saved={}", newOrUpdated);
 
-    if (subscriptionOptional.isPresent()) {
-      final org.candlepin.subscriptions.db.model.Subscription existingSubscription =
-          subscriptionOptional.get();
-      log.debug("Existing subscription in DB={}", existingSubscription);
-      if (!existingSubscription.equals(newOrUpdated)) {
-        if (existingSubscription.quantityHasChanged(newOrUpdated.getQuantity())) {
-          existingSubscription.endSubscription();
-          subscriptionRepository.save(existingSubscription);
-          final org.candlepin.subscriptions.db.model.Subscription newSub =
-              org.candlepin.subscriptions.db.model.Subscription.builder()
-                  .subscriptionId(existingSubscription.getSubscriptionId())
-                  .sku(existingSubscription.getSku())
-                  .ownerId(existingSubscription.getOwnerId())
-                  .accountNumber(existingSubscription.getAccountNumber())
-                  .quantity(subscription.getQuantity())
-                  .startDate(OffsetDateTime.now())
-                  .endDate(clock.dateFromMilliseconds(subscription.getEffectiveEndDate()))
-                  .marketplaceSubscriptionId(SubscriptionDtoUtil.extractMarketplaceId(subscription))
-                  .subscriptionNumber(subscription.getSubscriptionNumber())
-                  .build();
-          subscriptionRepository.save(newSub);
-        } else {
-          updateSubscription(subscription, existingSubscription);
-          subscriptionRepository.save(existingSubscription);
+      if (subscriptionOptional.isPresent()) {
+        final org.candlepin.subscriptions.db.model.Subscription existingSubscription =
+            subscriptionOptional.get();
+        log.debug("Existing subscription in DB={}", existingSubscription);
+        if (!existingSubscription.equals(newOrUpdated)) {
+          if (existingSubscription.quantityHasChanged(newOrUpdated.getQuantity())) {
+            Stoppywatch.split("save existing subscription");
+            existingSubscription.endSubscription();
+            subscriptionRepository.save(existingSubscription);
+            Stoppywatch.split("save new subscription (quantity changed)");
+            final org.candlepin.subscriptions.db.model.Subscription newSub =
+                org.candlepin.subscriptions.db.model.Subscription.builder()
+                    .subscriptionId(existingSubscription.getSubscriptionId())
+                    .sku(existingSubscription.getSku())
+                    .ownerId(existingSubscription.getOwnerId())
+                    .accountNumber(existingSubscription.getAccountNumber())
+                    .quantity(subscription.getQuantity())
+                    .startDate(OffsetDateTime.now())
+                    .endDate(clock.dateFromMilliseconds(subscription.getEffectiveEndDate()))
+                    .marketplaceSubscriptionId(
+                        SubscriptionDtoUtil.extractMarketplaceId(subscription))
+                    .subscriptionNumber(subscription.getSubscriptionNumber())
+                    .build();
+            subscriptionRepository.save(newSub);
+          } else {
+            Stoppywatch.split("update existing subscription");
+            updateSubscription(subscription, existingSubscription);
+            subscriptionRepository.save(existingSubscription);
+          }
+          capacityReconciliationController.reconcileCapacityForSubscription(newOrUpdated);
         }
+      } else {
+        Stoppywatch.split("save new subscription");
+        subscriptionRepository.save(newOrUpdated);
         capacityReconciliationController.reconcileCapacityForSubscription(newOrUpdated);
       }
-    } else {
-      subscriptionRepository.save(newOrUpdated);
-      capacityReconciliationController.reconcileCapacityForSubscription(newOrUpdated);
     }
   }
 
@@ -158,30 +172,38 @@ public class SubscriptionSyncController {
   }
 
   void syncSubscriptions(String orgId, int offset, int limit) {
-    log.info("Syncing subscriptions for org={} with offset={} and limit={} ", orgId, offset, limit);
-    Timer.Sample syncTime = Timer.start();
+    try (var sw =
+        Stoppywatch.elapse(
+            log, String.format("syncSubscriptions(%s,%d,%d)", orgId, offset, limit))) {
+      Stoppywatch.split("(start)");
+      log.info(
+          "Syncing subscriptions for org={} with offset={} and limit={} ", orgId, offset, limit);
+      Timer.Sample syncTime = Timer.start();
 
-    int pageSize = limit + 1;
-    List<Subscription> subscriptions =
-        subscriptionService.getSubscriptionsByOrgId(orgId, offset, pageSize);
-    log.info(
-        "Fetched subscriptions of size={} for org={} from external service ",
-        subscriptions.size(),
-        orgId);
+      Stoppywatch.split("Fetch Subscriptions");
+      int pageSize = limit + 1;
+      List<Subscription> subscriptions =
+          subscriptionService.getSubscriptionsByOrgId(orgId, offset, pageSize);
+      log.info(
+          "Fetched subscriptions of size={} for org={} from external service ",
+          subscriptions.size(),
+          orgId);
 
-    boolean hasMore = subscriptions.size() >= pageSize;
-    subscriptions.forEach(this::syncSubscription);
-    if (hasMore) {
-      enqueueSubscriptionSync(orgId, offset + limit, limit);
+      Stoppywatch.split("Sync subscriptions loop");
+      boolean hasMore = subscriptions.size() >= pageSize;
+      subscriptions.forEach(this::syncSubscription);
+      if (hasMore) {
+        enqueueSubscriptionSync(orgId, offset + limit, limit);
+      }
+      Duration syncDuration = Duration.ofNanos(syncTime.stop(syncTimer));
+      log.info(
+          "Fetched and synced numSubs={} for orgId={} offset={} limit={} in subSyncedTimeMillis={}",
+          subscriptions.size(),
+          orgId,
+          offset,
+          limit,
+          syncDuration.toMillis());
     }
-    Duration syncDuration = Duration.ofNanos(syncTime.stop(syncTimer));
-    log.info(
-        "Fetched and synced numSubs={} for orgId={} offset={} limit={} in subSyncedTimeMillis={}",
-        subscriptions.size(),
-        orgId,
-        offset,
-        limit,
-        syncDuration.toMillis());
   }
 
   private void enqueueSubscriptionSync(String orgId, int offset, int limit) {

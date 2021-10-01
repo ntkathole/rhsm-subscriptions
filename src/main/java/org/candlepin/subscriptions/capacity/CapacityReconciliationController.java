@@ -41,6 +41,7 @@ import org.candlepin.subscriptions.db.model.Subscription;
 import org.candlepin.subscriptions.db.model.SubscriptionCapacity;
 import org.candlepin.subscriptions.db.model.SubscriptionCapacityKey;
 import org.candlepin.subscriptions.resource.ResourceUtils;
+import org.candlepin.subscriptions.subscription.Stoppywatch;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -91,10 +92,16 @@ public class CapacityReconciliationController {
 
   @Transactional
   public void reconcileCapacityForSubscription(Subscription subscription) {
+    try (var sw =
+        Stoppywatch.elapse(
+            log,
+            String.format(
+                "reconcileCapacityForSubscription(%s)", subscription.getSubscriptionId()))) {
 
-    Collection<SubscriptionCapacity> newCapacities = mapSubscriptionToCapacities(subscription);
-    reconcileSubscriptionCapacities(
-        newCapacities, subscription.getSubscriptionId(), subscription.getSku());
+      Collection<SubscriptionCapacity> newCapacities = mapSubscriptionToCapacities(subscription);
+      reconcileSubscriptionCapacities(
+          newCapacities, subscription.getSubscriptionId(), subscription.getSku());
+    }
   }
 
   @Transactional
@@ -119,44 +126,69 @@ public class CapacityReconciliationController {
   }
 
   private Collection<SubscriptionCapacity> mapSubscriptionToCapacities(Subscription subscription) {
-
-    Offering offering = offeringRepository.getById(subscription.getSku());
-    Set<String> products = productExtractor.getProducts(offering);
-    return products.stream()
-        .map(product -> from(subscription, offering, product))
-        .collect(Collectors.toList());
+    try (var sw =
+        Stoppywatch.elapse(
+            log,
+            String.format("mapSubscriptionToCapacities(%s)", subscription.getSubscriptionId()))) {
+      Stoppywatch.split("get offering " + subscription.getSku());
+      Offering offering = offeringRepository.getById(subscription.getSku());
+      Stoppywatch.split("get products for offering " + subscription.getSku());
+      Set<String> products = productExtractor.getProducts(offering);
+      Stoppywatch.split(
+          "map products for subscrption "
+              + subscription.getSubscriptionId()
+              + " and offering "
+              + subscription.getSku());
+      return products.stream()
+          .map(product -> from(subscription, offering, product))
+          .collect(Collectors.toList());
+    }
   }
 
   private void reconcileSubscriptionCapacities(
       Collection<SubscriptionCapacity> newCapacities, String subscriptionId, String sku) {
+    try (var sw =
+        Stoppywatch.elapse(
+            log, String.format("reconcileSubscriptionCapacities(%s)", subscriptionId))) {
 
-    Collection<SubscriptionCapacity> toSave = new ArrayList<>();
-    Map<SubscriptionCapacityKey, SubscriptionCapacity> existingCapacityMap =
-        subscriptionCapacityRepository.findByKeySubscriptionId(subscriptionId).stream()
-            .collect(Collectors.toMap(SubscriptionCapacity::getKey, Function.identity()));
+      Stoppywatch.split("get existing capacities by subId " + subscriptionId);
+      Collection<SubscriptionCapacity> toSave = new ArrayList<>();
+      Map<SubscriptionCapacityKey, SubscriptionCapacity> existingCapacityMap =
+          subscriptionCapacityRepository.findByKeySubscriptionId(subscriptionId).stream()
+              .collect(Collectors.toMap(SubscriptionCapacity::getKey, Function.identity()));
 
-    if (productWhitelist.productIdMatches(sku)) {
-      newCapacities.forEach(
-          newCapacity -> {
-            toSave.add(newCapacity);
-            SubscriptionCapacity oldVersion = existingCapacityMap.remove(newCapacity.getKey());
-            if (oldVersion != null) {
-              capacityRecordsUpdated.increment();
-            } else {
-              capacityRecordsCreated.increment();
-            }
-          });
-      subscriptionCapacityRepository.saveAll(toSave);
+      Stoppywatch.split("is offering " + sku + " in whitelist");
+      if (productWhitelist.productIdMatches(sku)) {
+        newCapacities.forEach(
+            newCapacity -> {
+              Stoppywatch.split(
+                  String.format(
+                      "save capacity(owner=%s,product=%s,sub=%s)",
+                      newCapacity.getOwnerId(),
+                      newCapacity.getProductId(),
+                      newCapacity.getSubscriptionId()));
+              toSave.add(newCapacity);
+              SubscriptionCapacity oldVersion = existingCapacityMap.remove(newCapacity.getKey());
+              if (oldVersion != null) {
+                capacityRecordsUpdated.increment();
+              } else {
+                capacityRecordsCreated.increment();
+              }
+            });
+        Stoppywatch.split("saveAll");
+        subscriptionCapacityRepository.saveAll(toSave);
+      }
+
+      Stoppywatch.split("delete " + existingCapacityMap.size() + " capacities");
+      Collection<SubscriptionCapacity> toDelete = new ArrayList<>(existingCapacityMap.values());
+      subscriptionCapacityRepository.deleteAll(toDelete);
+      if (!toDelete.isEmpty()) {
+        log.info(
+            "Update for subscription ID {} removed {} incorrect capacity records.",
+            subscriptionId,
+            toDelete.size());
+      }
+      capacityRecordsDeleted.increment(toDelete.size());
     }
-
-    Collection<SubscriptionCapacity> toDelete = new ArrayList<>(existingCapacityMap.values());
-    subscriptionCapacityRepository.deleteAll(toDelete);
-    if (!toDelete.isEmpty()) {
-      log.info(
-          "Update for subscription ID {} removed {} incorrect capacity records.",
-          subscriptionId,
-          toDelete.size());
-    }
-    capacityRecordsDeleted.increment(toDelete.size());
   }
 }
