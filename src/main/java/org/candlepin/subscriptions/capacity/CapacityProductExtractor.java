@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.candlepin.subscriptions.db.model.Offering;
 import org.candlepin.subscriptions.registry.ProductProfileRegistry;
+import org.candlepin.subscriptions.subscription.Stoppywatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -58,20 +59,24 @@ public class CapacityProductExtractor {
   }
 
   private Set<String> mapEngProductsToSwatchIds(Stream<Integer> productIds) {
+    try (Stoppywatch sw = Stoppywatch.elapse(log, "mapEngProductsToSwatchIds(stream)")) {
+      Stoppywatch.split("map products to swatch map");
+      Set<String> products =
+          productIds
+              .filter(Objects::nonNull)
+              .map(engProductIdToSwatchProductIdsMap::get)
+              .filter(Objects::nonNull)
+              .flatMap(Set::stream)
+              .collect(Collectors.toSet());
 
-    Set<String> products =
-        productIds
-            .filter(Objects::nonNull)
-            .map(engProductIdToSwatchProductIdsMap::get)
-            .filter(Objects::nonNull)
-            .flatMap(Set::stream)
-            .collect(Collectors.toSet());
-
-    if (setIsInvalid(products)) {
-      // Kick out the RHEL products since it's implicit with the RHEL-included product being there.
-      products = products.stream().filter(matchesRhel().negate()).collect(Collectors.toSet());
+      Stoppywatch.split("remove any RHEL products");
+      if (setIsInvalid(products)) {
+        // Kick out the RHEL products since it's implicit with the RHEL-included product being
+        // there.
+        products = products.stream().filter(matchesRhel().negate()).collect(Collectors.toSet());
+      }
+      return products;
     }
-    return products;
   }
 
   private static Integer parseIntSkipUnparseable(String s) {
