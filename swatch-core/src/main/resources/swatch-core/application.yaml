@@ -130,4 +130,4 @@ rhsm-subscriptions:
       kafka-group-id: offering-worker
   clowder:
     json-resource-location: file:/cdapp/cdappconfig.json
-    strictLoading: true
+    strict-loading: true
