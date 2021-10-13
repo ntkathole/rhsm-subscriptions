@@ -74,7 +74,8 @@
   docker pull quay.io/cloudservices/rhsm-subscriptions:latest
   ```
 
-* Manually create the host-inventory-db-readonly secret
+* Manually create the host-inventory-db-readonly secret.  You can pull values out of 
+  vault.devshift.net
 
 ---
 # Development and Deployment
@@ -123,5 +124,5 @@ I have specifically defined the image tag here because otherwise, `bonfire` will
 to work is on the TODO list.
 
 Once your pods are up and running, you can expose them directly or the associated
-service using `port-forward`.  For example: `kubectl port-forward svc/rhsm-clowdapp-api 8000`
+service using `port-forward`.  For example: `kubectl port-forward svc/rhsm-api 8000`
 will forward your localhost's port 8000 to the service (and underlying pod).
