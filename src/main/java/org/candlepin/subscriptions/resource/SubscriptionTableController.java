@@ -20,11 +20,6 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.candlepin.subscriptions.resource.ResourceUtils.*;
-
-import java.time.OffsetDateTime;
-import java.util.*;
-import javax.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.candlepin.subscriptions.db.SubscriptionCapacityViewRepository;
 import org.candlepin.subscriptions.db.model.ServiceLevel;
@@ -35,6 +30,12 @@ import org.candlepin.subscriptions.utilization.api.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import javax.validation.constraints.Min;
+import java.time.OffsetDateTime;
+import java.util.*;
+
+import static org.candlepin.subscriptions.resource.ResourceUtils.*;
 
 @Service
 @Slf4j
@@ -130,11 +131,18 @@ public class SubscriptionTableController {
   }
 
   private List<SkuCapacity> paginate(List<SkuCapacity> capacities, Pageable pageable) {
+
     if (pageable == null) {
       return capacities;
     }
+    log.info("Pageable: pageNumber {} and pageSize: {}", pageable.getPageNumber(), pageable.getPageSize());
     int offset = pageable.getPageNumber() * pageable.getPageSize();
     int lastIndex = Math.min(capacities.size(), offset + pageable.getPageSize());
+    log.info(
+        "Last Index: {}, Capacities.size: {}, offset+pagesize: {}",
+        lastIndex,
+        capacities.size(),
+        offset + pageable.getPageSize());
     return capacities.subList(offset, lastIndex);
   }
 
