@@ -112,6 +112,7 @@ public class SubscriptionTableController {
     }
 
     List<SkuCapacity> reportItems = new ArrayList<>(inventories.values());
+    int reportItemCount = reportItems.size();
     // The pagination and sorting of capacities is done in memory and can cause performance
     // issues
     // As an improvement this should be pushed lower into the Repository layer
@@ -123,7 +124,7 @@ public class SubscriptionTableController {
         .data(reportItems)
         .meta(
             new HostReportMeta()
-                .count(capacities.size())
+                .count(reportItemCount)
                 .serviceLevel(serviceLevel)
                 .usage(usage)
                 .uom(uom)
