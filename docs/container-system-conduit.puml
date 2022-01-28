@@ -5,6 +5,7 @@
 skinparam backgroundColor #FEFEFE
 
 LAYOUT_WITH_LEGEND()
+SHOW_PERSON_PORTRAIT()
 
 title Container diagram for Subscription watch System conduit (aka. rhsm-conduit)
 

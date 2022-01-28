@@ -1,14 +1,16 @@
 @startuml
 !include <C4/C4_Context>
+!include <C4/C4>
 
 ' see https://forum.plantuml.net/8356/white-backgrounds-are-rendered-transparent-in-svg
 skinparam backgroundColor #FEFEFE
 
+SHOW_PERSON_PORTRAIT()
 LAYOUT_WITH_LEGEND()
 
-title System Context diagram for Subscription watch
-
 Person(customer, "Red Hat Customer")
+
+title System Context diagram for Subscription watch
 
 Boundary(swatch, "Susbscription watch") {
   System(ui, "Subscription watch UI", "Customer facing views of the usage and capacity data.")
