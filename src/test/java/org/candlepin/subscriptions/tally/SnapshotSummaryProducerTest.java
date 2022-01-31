@@ -102,6 +102,9 @@ class SnapshotSummaryProducerTest {
     verify(kafka, times(2)).send(eq(props.getTopic()), summaryCaptor.capture());
 
     List<TallySummary> summaries = summaryCaptor.getAllValues();
+
+    System.err.println(summaries.get(0).toString());
+
     assertEquals(2, summaries.size());
     Map<String, List<TallySummary>> results =
         summaries.stream().collect(Collectors.groupingBy(TallySummary::getAccountNumber));

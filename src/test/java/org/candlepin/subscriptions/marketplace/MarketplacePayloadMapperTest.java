@@ -29,6 +29,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import com.google.gson.Gson;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -279,6 +280,9 @@ class MarketplacePayloadMapperTest {
     String orgId = "org123";
     var summary =
         new TallySummary().withTallySnapshots(List.of(snapshot)).withAccountNumber(account);
+
+    var json = new Gson().toJson(summary);
+    System.err.println(json);
 
     when(accountService.lookupOrgId(account)).thenReturn(orgId);
 
