@@ -20,17 +20,15 @@
  */
 package org.candlepin.subscriptions.resource;
 
-import static org.candlepin.subscriptions.marketplace.MarketplaceJmxBean.USAGE_SUBMISSION_ERROR_MESSAGE;
-
+import com.google.gson.Gson;
+import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.candlepin.subscriptions.json.TallySummary;
-import org.candlepin.subscriptions.marketplace.MarketplacePayloadMapper;
-import org.candlepin.subscriptions.marketplace.api.model.UsageRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jmx.JmxException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -41,31 +39,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/bananas")
 public class MarketplaceRequeueController {
 
-  private final MarketplacePayloadMapper marketplacePayloadMapper;
-
-  @Autowired
-  public MarketplaceRequeueController(MarketplacePayloadMapper marketplacePayloadMapper) {
-
-    this.marketplacePayloadMapper = marketplacePayloadMapper;
-  }
-
   @PostMapping
-  public @ResponseBody String resubTallySummary(TallySummary tallySummary) {
+  public @ResponseBody
+  ResponseEntity<String> resubTallySummary(@RequestBody TallySummary tallySummary,
+      @QueryParam("forceFailure") boolean forceFailure) {
 
-    UsageRequest usageRequest = marketplacePayloadMapper.createUsageRequest(tallySummary);
+    if (forceFailure) {
+      throw new RuntimeException("ahhhhhhhh");
+    }
 
-    return tallySummary.toString();
+    var json = new Gson().toJson(tallySummary);
+
+    return ResponseEntity.ok(json);
   }
 
-  @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-  @ExceptionHandler({JmxException.class})
-  public void handleJmxException(JmxException e) {
-    //
-  }
 
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   @ExceptionHandler({Exception.class})
   public void handleException(Exception e) {
-    log.error("{}{}", USAGE_SUBMISSION_ERROR_MESSAGE, e);
-    //
+    log.error("Eeeep, error doing something somewhere", e);
+
   }
 }
