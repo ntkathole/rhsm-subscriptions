@@ -20,13 +20,13 @@
  */
 package org.candlepin.subscriptions.conduit.rhsm.client;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -41,13 +41,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.util.ResourceUtils;
 
 class X509ApiClientFactoryTest {
+  // TODO(khowell): rework to use httpclient as factory instead
   public static final String STORE_PASSWORD = "password";
 
   private WireMockServer server;
 
   private MappingBuilder stubHelloWorld() {
-    return get(urlPathEqualTo("/hello"))
-        .willReturn(ok("Hello World").withHeader("Content-Type", "text/plain"));
+    return WireMock.get(WireMock.urlPathEqualTo("/hello"))
+        .willReturn(WireMock.ok("Hello World").withHeader("Content-Type", "text/plain"));
   }
 
   @AfterEach

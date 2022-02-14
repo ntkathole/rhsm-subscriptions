@@ -21,8 +21,11 @@
 package org.candlepin.subscriptions.http;
 
 import java.io.File;
+import java.time.Duration;
+import javax.net.ssl.HostnameVerifier;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 
 /** HTTP service client configuration. */
 @Getter
@@ -45,9 +48,24 @@ public class HttpClientProperties {
   /** Maximum number of simultaneous connections to the service. */
   private int maxConnections = 100;
 
+  /** Max time to keep a connection open */
+  private Duration connectionTtl = Duration.ofMinutes(5);
+
+  /**
+   * -- SETTER -- Allow setting the HostnameVerifier implementation. NoopHostnameVerifier could be
+   * used in testing, for example
+   */
+  private HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
+
   /** Certificate authenticate file path */
   private File keystore;
 
   /** Certificate authenticate file password */
   private char[] keystorePassword;
+
+  /** Truststore file path */
+  private File truststore;
+
+  /** Truststore file password */
+  private char[] truststorePassword;
 }

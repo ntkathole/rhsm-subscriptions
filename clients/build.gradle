@@ -100,10 +100,6 @@ project(":clients:rhsm-client") {
         api_spec_path = "${projectDir}/rhsm-client-spec.yaml"
         config_file = "${projectDir}/rhsm-client-config.json"
     }
-
-    dependencies {
-        testCompile "com.github.tomakehurst:wiremock-jre8:2.32.0"
-    }
 }
 
 project(":clients:subscription-client") {

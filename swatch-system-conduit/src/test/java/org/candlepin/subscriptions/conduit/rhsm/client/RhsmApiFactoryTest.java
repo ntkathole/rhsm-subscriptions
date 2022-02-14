@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.google.common.io.Resources;
 import java.util.ArrayList;
@@ -46,8 +47,8 @@ class RhsmApiFactoryTest {
   private X509ApiClientFactory x509Factory;
 
   private MappingBuilder stubHelloWorld() {
-    return get(urlPathEqualTo("/hello"))
-        .willReturn(ok("Hello World").withHeader("Content-Type", "text/plain"));
+    return WireMock.get(WireMock.urlPathEqualTo("/hello"))
+        .willReturn(WireMock.ok("Hello World").withHeader("Content-Type", "text/plain"));
   }
 
   @AfterEach

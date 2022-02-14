@@ -59,10 +59,10 @@ class CertInfoEndpointTest {
         () -> assertEquals("CN=Client", certInfo.get("Distinguished Name")),
         () ->
             assertEquals(
-                "278579299951850685400938987567493704619512184278", certInfo.get("Serial Number")),
+                "10638490788820008774", certInfo.get("Serial Number")),
         () ->
             assertEquals(
-                "5253AE7B787839DF9F1C1A0E5FECB5F1C1868FAF",
+                "F3B39C8CAB3D8A94318727317B63E961FB9D9B0D",
                 certInfo.get("SHA-1 Fingerprint").toUpperCase()),
         () -> assertEquals("CN=Test CA", certInfo.get("Issuer Distinguished Name")));
   }

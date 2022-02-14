@@ -66,6 +66,7 @@ dependencies {
 
     testCompile "org.springframework.security:spring-security-test"
     testCompile "org.springframework.kafka:spring-kafka-test"
+    testCompile "com.github.tomakehurst:wiremock-jre8:2.32.0"
     testCompile project(':swatch-core-test')
 
     runtime "org.hsqldb:hsqldb"
