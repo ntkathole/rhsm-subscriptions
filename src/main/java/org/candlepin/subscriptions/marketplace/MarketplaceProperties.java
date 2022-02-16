@@ -23,20 +23,25 @@ package org.candlepin.subscriptions.marketplace;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.candlepin.subscriptions.http.HttpClientProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /** Properties for the Marketplace integration. */
-@Getter
-@Setter
 @Component
 @ConfigurationProperties(prefix = "rhsm-subscriptions.marketplace")
+@Data
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
 public class MarketplaceProperties extends HttpClientProperties {
 
   /** Marketplace API key (from https://marketplace.redhat.com/en-us/account/service-ids) */
+  @ToString.Exclude
   private String apiKey;
 
   /** Amount of time prior to token expiration to request a new token anyways. */
