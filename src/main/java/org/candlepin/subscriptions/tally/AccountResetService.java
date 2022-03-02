@@ -56,6 +56,10 @@ public class AccountResetService {
     this.subscriptionRepository = subscriptionRepository;
   }
 
+  public String dummyMethodForTesting(String color){
+    return color;
+  }
+
   @Transactional
   public void deleteDataForAccount(String accountNumber) {
 
