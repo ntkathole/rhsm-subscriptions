@@ -21,6 +21,7 @@
 package org.candlepin.subscriptions.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.sql.DataSource;
 import org.candlepin.subscriptions.rbac.RbacProperties;
 import org.candlepin.subscriptions.rbac.RbacService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import org.springframework.boot.actuate.autoconfigure.web.server.ManagementServe
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -69,42 +71,35 @@ import org.springframework.security.web.csrf.CsrfFilter;
  * </ol>
  */
 @Configuration
-@Import(RbacConfiguration.class)
-public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
+@Order(99)
+public class ApiPskSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Autowired protected ObjectMapper mapper;
   @Autowired protected SecurityProperties secProps;
   @Autowired protected ManagementServerProperties actuatorProps;
-  @Autowired protected RbacProperties rbacProperties;
+  @Autowired protected AuthProperties authProperties;
   @Autowired protected ConfigurableEnvironment env;
-  @Autowired protected RbacService rbacService;
+
+
+  @Autowired
+  public void initialize(AuthenticationManagerBuilder auth, DataSource dataSource) {
+    auth.authenticationProvider(pskHeaderAuthenticationProvider());
+  }
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) {
     // Add our AuthenticationProvider to the Provider Manager's list
-    auth.authenticationProvider(
-        identityHeaderAuthenticationProvider(
-            identityHeaderAuthenticationDetailsService(secProps, rbacProperties, rbacService)));
+    auth.authenticationProvider(pskHeaderAuthenticationProvider());
   }
 
-  @Bean
-  public IdentityHeaderAuthenticationDetailsService identityHeaderAuthenticationDetailsService(
-      SecurityProperties secProps, RbacProperties rbacProperties, RbacService rbacService) {
-    return new IdentityHeaderAuthenticationDetailsService(
-        secProps, rbacProperties, identityHeaderAuthoritiesMapper(), rbacService);
-  }
-
-  @Bean
-  public AuthenticationProvider identityHeaderAuthenticationProvider(
-      @Qualifier("identityHeaderAuthenticationDetailsService")
-          IdentityHeaderAuthenticationDetailsService detailsService) {
-    return new IdentityHeaderAuthenticationProvider(detailsService);
+  public AuthenticationProvider pskHeaderAuthenticationProvider() {
+    return new PskHeaderAuthenticationProvider();
   }
 
   // NOTE: intentionally *not* annotated w/ @Bean; @Bean causes an *extra* use as an application
   // filter
-  public IdentityHeaderAuthenticationFilter identityHeaderAuthenticationFilter() throws Exception {
-    IdentityHeaderAuthenticationFilter filter = new IdentityHeaderAuthenticationFilter(mapper);
+  public PskHeaderAuthenticationFilter pskHeaderAuthenticationFilter() throws Exception {
+    PskHeaderAuthenticationFilter filter = new PskHeaderAuthenticationFilter(mapper, authProperties);
     filter.setCheckForPrincipalChanges(true);
     filter.setAuthenticationManager(authenticationManager());
     filter.setAuthenticationFailureHandler(new IdentityHeaderAuthenticationFailureHandler(mapper));
@@ -113,17 +108,12 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
   }
 
   @Bean
-  public IdentityHeaderAuthoritiesMapper identityHeaderAuthoritiesMapper() {
-    return new IdentityHeaderAuthoritiesMapper();
-  }
-
-  @Bean
-  public AccessDeniedHandler restAccessDeniedHandler() {
+  public AccessDeniedHandler restInternalAccessDeniedHandler() {
     return new RestAccessDeniedHandler(mapper);
   }
 
   @Bean
-  public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+  public AuthenticationEntryPoint restInternalAuthenticationEntryPoint() {
     return new RestAuthenticationEntryPoint(new IdentityHeaderAuthenticationFailureHandler(mapper));
   }
 
@@ -144,14 +134,15 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
     String apiPath =
         env.getRequiredProperty(
             "rhsm-subscriptions.package_uri_mappings.org.candlepin.subscriptions.resteasy");
-    http.addFilter(identityHeaderAuthenticationFilter())
-        .addFilterAfter(mdcFilter(), IdentityHeaderAuthenticationFilter.class)
+    http.addFilter(pskHeaderAuthenticationFilter())
+        .addFilterAfter(mdcFilter(), PskHeaderAuthenticationFilter.class)
         .addFilterAt(antiCsrfFilter(secProps, env), CsrfFilter.class)
+        .authenticationProvider(pskHeaderAuthenticationProvider())
         .csrf()
         .disable()
         .exceptionHandling()
-        .accessDeniedHandler(restAccessDeniedHandler())
-        .authenticationEntryPoint(restAuthenticationEntryPoint())
+        .accessDeniedHandler(restInternalAccessDeniedHandler())
+        .authenticationEntryPoint(restInternalAuthenticationEntryPoint())
         .and()
         // disable sessions, our API is stateless, and sessions cause RBAC information to be
         // cached
@@ -161,12 +152,7 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
         .anonymous() // Creates an anonymous user if no header is present at all. Prevents NPEs
         .and()
         .authorizeRequests()
-        .antMatchers("/**/openapi.*", "/**/version", "/api-docs/**", "/webjars/**")
-        .permitAll()
-        // ingress security uses server settings (require ssl cert auth), so permit all here
-        .antMatchers(String.format("/%s/ingress/**", apiPath))
-        .permitAll()
-        .antMatchers(String.format("/%s/internal/**", apiPath))
+        .antMatchers("/**")
         .permitAll()
         // Allow access to the Spring Actuator "root" which displays the available endpoints
         .requestMatchers(
@@ -176,22 +162,8 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
         .permitAll()
         .requestMatchers(EndpointRequest.to("health", "info", "prometheus", "hawtio"))
         .permitAll()
-
-        /* Values assigned to management.path-mapping.* shouldn't have a leading slash. However, Clowder
-         * only provides a path starting with a leading slash.  I have elected to set the default
-         * to do the same for the sake of consistency.  The leading slash can potentially cause problems with Spring
-         * Security since the path now becomes (assuming management.base-path is "/") "//metrics".
-         * Browser requests to "/metrics" aren't going to match according to Spring Security's path matching rules
-         * and the end result is that any security rule applied to EndpointRequest.to("prometheus") will be
-         * applied to the defined path ("//metrics") rather than the de facto path ("/metrics").
-         * Accordingly, I've put in a custom rule in the security config to allow for access to "/metrics"
-         */
-
-        .antMatchers("/metrics")
-        .permitAll()
-        .antMatchers("/**/capacity/**", "/**/tally/**", "/**/hosts/**")
-        .access("@optInChecker.checkAccess(authentication)")
-        .anyRequest()
+        //Only internal endpoints should be authenticated this way
+        .antMatchers(String.format("/%s/internal/**", apiPath))
         .authenticated();
   }
 }

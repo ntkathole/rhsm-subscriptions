@@ -295,6 +295,7 @@ project(":api") {
 
     ext {
         api_spec_path = "${projectDir}/rhsm-subscriptions-api-spec.yaml"
+        internal_api_spec_path = "${projectDir}/internal-rhsm-subscriptions-api-spec.yaml"
         config_file = "${projectDir}/rhsm-subscriptions-api-config.json"
     }
 
@@ -310,9 +311,27 @@ project(":api") {
       ]
     }
 
-    openApiValidate {
+    task generateInternalApi(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+        generatorName = "jaxrs-spec"
+        inputSpec = internal_api_spec_path
+        configFile = config_file
+        outputDir = "$buildDir/generated"
+        configOptions = [
+                interfaceOnly: "true",
+                generatePom: "false",
+                dateLibrary: "java8",
+        ]
+    }
+
+    task validateApiSpec(type: org.openapitools.generator.gradle.plugin.tasks.ValidateTask){
         inputSpec = api_spec_path
     }
+
+    task validateInternalApiSpec(type: org.openapitools.generator.gradle.plugin.tasks.ValidateTask){
+        inputSpec = internal_api_spec_path
+    }
+
+    task validateSpecs(dependsOn: ['validateApiSpec', 'validateInternalApiSpec'])
 
     task generateApiDocs(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
         generatorName = "html"
@@ -337,11 +356,11 @@ project(":api") {
     }
 
     processResources {
-        from "$buildDir/generated/openapijson/openapi.json"
-        from api_spec_path
-        rename { String fileName ->
-            api_spec_path.endsWith(fileName) ? 'openapi.yaml' : fileName  // rename yaml to openapi.yaml
-        }
+            from "$buildDir/generated/openapijson/openapi.json"
+            from api_spec_path
+            rename { String fileName ->
+                api_spec_path.endsWith(fileName) ? 'openapi.yaml' : fileName  // rename yaml to openapi.yaml
+            }
     }
 
     dependencies {
@@ -355,7 +374,9 @@ project(":api") {
 
     sourceSets.main.java.srcDirs = ["${buildDir}/generated/src/gen/java"]
     compileJava.dependsOn tasks.openApiGenerate
+    compileJava.dependsOn tasks.generateInternalApi
     processResources.dependsOn tasks.generateOpenApiJson
+
 }
 
 project(":kafka-schema") {

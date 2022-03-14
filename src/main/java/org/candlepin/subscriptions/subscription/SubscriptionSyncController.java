@@ -30,7 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.candlepin.subscriptions.capacity.CapacityReconciliationController;
@@ -42,6 +44,7 @@ import org.candlepin.subscriptions.exception.ErrorCode;
 import org.candlepin.subscriptions.exception.ExternalServiceException;
 import org.candlepin.subscriptions.subscription.api.model.Subscription;
 import org.candlepin.subscriptions.subscription.api.model.SubscriptionProduct;
+import org.candlepin.subscriptions.tally.UsageCalculation.Key;
 import org.candlepin.subscriptions.task.TaskQueueProperties;
 import org.candlepin.subscriptions.util.ApplicationClock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -315,4 +318,11 @@ public class SubscriptionSyncController {
   public void deleteSubscription(String subscriptionId) {
     subscriptionRepository.deleteBySubscriptionId(subscriptionId);
   }
+
+  @Transactional
+  public void forceSyncSubscriptionsForOrg(String orgId) {
+      var subscriptions = subscriptionService.getSubscriptionsByOrgId(orgId);
+      subscriptions.forEach(this::syncSubscription);
+  }
+
 }

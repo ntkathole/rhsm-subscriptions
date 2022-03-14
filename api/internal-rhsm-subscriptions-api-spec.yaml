@@ -42,7 +42,7 @@ paths:
                 $ref: "#/components/schemas/VersionInfo"
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /subscriptions/sync/org/{org_id}:
+  /internal/subscriptions/sync/org/{org_id}:
     description: "Force sync of subscriptions for given org_id."
     parameters:
       - name: org_id
@@ -57,6 +57,11 @@ paths:
       responses:
         '200':
           description: "The request for syncing organization's subscription was successful."
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -66,8 +71,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
       tags:
-        - subscriptions
-  /openapi.json:
+        - internalSubscriptions
+  /internalopenapi.json:
     get:
       description: "Get the OpenAPI spec in JSON format."
       operationId: getOpenApiJson
@@ -80,7 +85,7 @@ paths:
             application/json:
               schema:
                 type: string
-  /openapi.yaml:
+  /internalopenapi.yaml:
     get:
       description: "Get the OpenAPI spec in YAML format."
       operationId: getOpenApiYaml
