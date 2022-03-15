@@ -284,7 +284,10 @@ RHSM_RBAC_USE_STUB=true ./gradlew bootRun
 * `CLOUDIGRADE_MAX_ATTEMPTS`: maximum number of attempts to query cloudigrade
 * `CLOUDIGRADE_HOST`: cloudigrade service host
 * `CLOUDIGRADE_PORT`: cloudigrade service port
+* `CLOUDIGRADE_INTERNAL_HOST`: cloudigrade internal services host
+* `CLOUDIGRADE_INTERNAL_PORT`: cloudigrade internal services port
 * `CLOUDIGRADE_MAX_CONNECTIONS`: max concurrent connections to cloudigrade service
+* `CLOUDIGRADE_PSK`: pre-shared key for cloudigrade authentication
 
 </details>
 
@@ -340,6 +343,21 @@ to a mock Clowder JSON file.
 E.g.
 ```
 $ ACG_CONFIG=$(pwd)/swatch-core/src/test/resources/test-clowder-config.json ./gradlew bootRun
+```
+
+### Viewing Kafka messages in an ephemeral environment
+
+1. Get a token and login via `oc login`.
+2. Switch to the ephemeral namespace via `oc project $namespace`
+3. Remotely exec kakfa-console-consumer.sh with the desired topic (replace `$topic` below):
+
+```
+oc rsh \
+  $(oc get pod -o name -l app.kubernetes.io/name=kafka) \
+  bin/kafka-console-consumer.sh \
+  --topic $topic \
+  --from-beginning \
+  --bootstrap-server localhost:9092
 ```
 
 </details>

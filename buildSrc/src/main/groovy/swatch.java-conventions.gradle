@@ -1,0 +1,71 @@
+// gradle config common to all swatch java projects
+plugins {
+    id "java"
+    id "jacoco"
+    id "com.diffplug.spotless"
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = "https://packages.confluent.io/maven/"
+    }
+    maven {
+        url = "https://splunk.jfrog.io/splunk/ext-releases-local"
+    }
+}
+
+dependencies {
+    compileOnly libraries["lombok"]
+    annotationProcessor libraries["lombok"]
+    testCompileOnly libraries["lombok"]
+    testAnnotationProcessor libraries["lombok"]
+
+    // common testing deps, junit + mockito + hamcrest
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.jupiter:junit-jupiter-params"
+    testImplementation "org.mockito:mockito-core"
+    testImplementation "org.mockito:mockito-junit-jupiter"
+    testImplementation "org.hamcrest:hamcrest"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+}
+
+spotless {
+    java {
+        targetExclude '**/build/**' // exclude generated code
+        enforceCheck false // allows build task to be successful, even if there is a code style violation
+        googleJavaFormat()
+        licenseHeaderFile "${rootDir}/config/codestyle/HEADER.txt" //lets you specify code that you don't want to violate rules or be reformatted
+        toggleOffOn()
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+    if (System.getenv("DOCKER_HOST") == null) {
+        String UID = 'id -u'.execute().text.strip()
+        environment "DOCKER_HOST", "unix:///run/user/$UID/podman/podman.sock"
+    }
+    environment "TESTCONTAINERS_RYUK_DISABLED", "true"
+    environment "TESTCONTAINERS_CHECKS_DISABLE", "true"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
+}

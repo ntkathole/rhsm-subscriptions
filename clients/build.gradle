@@ -1,13 +1,21 @@
 project(":clients:cloudigrade-client") {
-    apply plugin: "org.openapi.generator"
-
     ext {
         api_spec_path = "${projectDir}/cloudigrade-api-spec.yaml"
         config_file = "${projectDir}/cloudigrade-client-config.json"
     }
 }
 
+project(":clients:cloudigrade-internal-client") {
+    apply plugin: "org.openapi.generator"
+
+    ext {
+        api_spec_path = "${projectDir}/cloudigrade-internal-api-spec.yaml"
+        config_file = "${projectDir}/cloudigrade-internal-client-config.json"
+    }
+}
+
 project(":clients:insights-inventory-client") {
+    apply plugin: "swatch.java-conventions"
     apply plugin: "org.openapi.generator"
     apply plugin: "de.undercouch.download"
 
@@ -38,7 +46,7 @@ project(":clients:insights-inventory-client") {
 }
 
 project(":clients:rh-marketplace-client") {
-    apply plugin: "org.openapi.generator"
+    apply plugin: "swatch.java-conventions"
 
     ext {
         api_spec_path = "${projectDir}/rh-marketplace-api-spec.yaml"
@@ -52,8 +60,6 @@ project(":clients:rh-marketplace-client") {
 }
 
 project(":clients:product-client") {
-    apply plugin: "org.openapi.generator"
-
     ext {
         api_spec_path = "${projectDir}/product-api-spec.yaml"
         config_file = "${projectDir}/product-client-config.json"
@@ -61,8 +67,6 @@ project(":clients:product-client") {
 }
 
 project(":clients:prometheus-client") {
-    apply plugin: "org.openapi.generator"
-
     ext {
         api_spec_path = "${projectDir}/prometheus-query-api-spec.yaml"
         config_file = "${projectDir}/prometheus-client-config.json"
@@ -70,6 +74,7 @@ project(":clients:prometheus-client") {
 }
 
 project(":clients:rbac-client") {
+    apply plugin: "swatch.java-conventions"
     apply plugin: "org.openapi.generator"
     apply plugin: "de.undercouch.download"
 
@@ -94,7 +99,7 @@ project(":clients:rbac-client") {
 }
 
 project(":clients:rhsm-client") {
-    apply plugin: "org.openapi.generator"
+    apply plugin: "swatch.java-conventions"
 
     ext {
         api_spec_path = "${projectDir}/rhsm-client-spec.yaml"
@@ -102,14 +107,11 @@ project(":clients:rhsm-client") {
     }
 
     dependencies {
-        implementation project(':clients-core')
-        testCompile "com.github.tomakehurst:wiremock-jre8:2.32.0"
+        testImplementation libraries["wiremock-jre8"]
     }
 }
 
 project(":clients:subscription-client") {
-    apply plugin: "org.openapi.generator"
-
     ext {
         api_spec_path = "${projectDir}/subscription-api-spec.yaml"
         config_file = "${projectDir}/subscription-client-config.json"
@@ -117,8 +119,6 @@ project(":clients:subscription-client") {
 }
 
 project(":clients:user-client") {
-    apply plugin: "org.openapi.generator"
-
     ext {
         api_spec_path = "${projectDir}/user-api-spec.yaml"
         config_file = "${projectDir}/user-client-config.json"
@@ -126,6 +126,9 @@ project(":clients:user-client") {
 }
 
 configure(subprojects) {
+    apply plugin: "java-library"
+    apply plugin: "swatch.spring-boot-dependencies-conventions"
+    apply plugin: "swatch.java-conventions"
     apply plugin: "org.openapi.generator"
 
     openApiValidate {
@@ -157,20 +160,20 @@ configure(subprojects) {
     }
 
     dependencies {
-        compile project(":clients-core")
+        api project(':clients-core')
+        api "javax.annotation:javax.annotation-api"
+        api "org.jboss.resteasy:resteasy-client"
+        api "org.jboss.resteasy:resteasy-multipart-provider"
 
-        compile "org.jboss.resteasy:resteasy-client"
-        compile "org.jboss.resteasy:resteasy-multipart-provider"
+        api "com.fasterxml.jackson.core:jackson-annotations"
+        api "com.fasterxml.jackson.core:jackson-databind"
+        api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
 
-        compile "com.fasterxml.jackson.core:jackson-annotations"
-        compile "com.fasterxml.jackson.core:jackson-databind"
-        compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-
-        compile "org.springframework:spring-context"
-        compile "org.slf4j:slf4j-api"
-        compile "io.swagger:swagger-annotations"
-        compile "com.google.code.findbugs:jsr305:3.0.2"
-        compile "org.openapitools:jackson-databind-nullable:0.2.2"
+        api "org.springframework:spring-context"
+        api "org.slf4j:slf4j-api"
+        api "io.swagger:swagger-annotations"
+        api libraries["jsr305"]
+        api libraries["jackson-databind-nullable"]
     }
 
     sourceSets.main.java.srcDirs += "${buildDir}/generated/src/main/java"
