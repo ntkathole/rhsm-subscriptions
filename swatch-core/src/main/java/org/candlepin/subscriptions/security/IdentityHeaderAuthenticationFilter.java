@@ -54,6 +54,7 @@ public class IdentityHeaderAuthenticationFilter extends AbstractPreAuthenticated
 
   @Override
   protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
+    System.out.println("Identity Filter");
     String identityHeader = request.getHeader(RH_IDENTITY_HEADER);
 
     // If the header is missing it will be passed down the chain.

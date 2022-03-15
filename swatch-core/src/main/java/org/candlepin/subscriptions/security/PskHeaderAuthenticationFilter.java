@@ -56,6 +56,7 @@ public class PskHeaderAuthenticationFilter extends AbstractPreAuthenticatedProce
 
   @Override
   protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
+    System.out.println("PSK Filter");
     String pskHeader = request.getHeader(RH_PSK_HEADER);
 
     // If the header is missing it will be passed down the chain.

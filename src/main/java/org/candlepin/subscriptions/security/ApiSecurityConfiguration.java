@@ -78,7 +78,7 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired protected RbacProperties rbacProperties;
   @Autowired protected ConfigurableEnvironment env;
   @Autowired protected RbacService rbacService;
-
+  
   @Override
   public void configure(AuthenticationManagerBuilder auth) {
     // Add our AuthenticationProvider to the Provider Manager's list
@@ -144,7 +144,9 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
     String apiPath =
         env.getRequiredProperty(
             "rhsm-subscriptions.package_uri_mappings.org.candlepin.subscriptions.resteasy");
-    http.addFilter(identityHeaderAuthenticationFilter())
+    http.authenticationProvider(identityHeaderAuthenticationProvider(
+            identityHeaderAuthenticationDetailsService(secProps, rbacProperties, rbacService)))
+        .addFilter(identityHeaderAuthenticationFilter())
         .addFilterAfter(mdcFilter(), IdentityHeaderAuthenticationFilter.class)
         .addFilterAt(antiCsrfFilter(secProps, env), CsrfFilter.class)
         .csrf()

@@ -71,7 +71,7 @@ import org.springframework.security.web.csrf.CsrfFilter;
  * </ol>
  */
 @Configuration
-@Order(99)
+@Order(101)
 public class ApiPskSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Autowired protected ObjectMapper mapper;
@@ -81,16 +81,10 @@ public class ApiPskSecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired protected ConfigurableEnvironment env;
 
 
-  @Autowired
-  public void initialize(AuthenticationManagerBuilder auth, DataSource dataSource) {
-    auth.authenticationProvider(pskHeaderAuthenticationProvider());
-  }
-
-  @Override
-  public void configure(AuthenticationManagerBuilder auth) {
-    // Add our AuthenticationProvider to the Provider Manager's list
-    auth.authenticationProvider(pskHeaderAuthenticationProvider());
-  }
+//  @Autowired
+//  public void initialize(AuthenticationManagerBuilder auth, DataSource dataSource) {
+//    auth.authenticationProvider(pskHeaderAuthenticationProvider());
+//  }
 
   public AuthenticationProvider pskHeaderAuthenticationProvider() {
     return new PskHeaderAuthenticationProvider();
@@ -134,36 +128,20 @@ public class ApiPskSecurityConfiguration extends WebSecurityConfigurerAdapter {
     String apiPath =
         env.getRequiredProperty(
             "rhsm-subscriptions.package_uri_mappings.org.candlepin.subscriptions.resteasy");
-    http.addFilter(pskHeaderAuthenticationFilter())
+    http.authenticationProvider(pskHeaderAuthenticationProvider())
+        .addFilter(pskHeaderAuthenticationFilter())
         .addFilterAfter(mdcFilter(), PskHeaderAuthenticationFilter.class)
         .addFilterAt(antiCsrfFilter(secProps, env), CsrfFilter.class)
-        .authenticationProvider(pskHeaderAuthenticationProvider())
         .csrf()
         .disable()
         .exceptionHandling()
         .accessDeniedHandler(restInternalAccessDeniedHandler())
-        .authenticationEntryPoint(restInternalAuthenticationEntryPoint())
-        .and()
-        // disable sessions, our API is stateless, and sessions cause RBAC information to be
-        // cached
-        .sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        .and()
-        .anonymous() // Creates an anonymous user if no header is present at all. Prevents NPEs
         .and()
         .authorizeRequests()
-        .antMatchers("/**")
-        .permitAll()
-        // Allow access to the Spring Actuator "root" which displays the available endpoints
-        .requestMatchers(
-            request ->
-                request.getServerPort() == actuatorProps.getPort()
-                    && request.getContextPath().equals(actuatorProps.getBasePath()))
-        .permitAll()
-        .requestMatchers(EndpointRequest.to("health", "info", "prometheus", "hawtio"))
-        .permitAll()
         //Only internal endpoints should be authenticated this way
         .antMatchers(String.format("/%s/internal/**", apiPath))
-        .authenticated();
+        .authenticated()
+        .anyRequest()
+        .permitAll();
   }
 }
