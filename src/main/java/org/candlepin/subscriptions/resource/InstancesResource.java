@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import org.candlepin.subscriptions.db.HostRepository;
+import org.candlepin.subscriptions.db.model.BillingProvider;
 import org.candlepin.subscriptions.db.model.Host;
 import org.candlepin.subscriptions.db.model.InstanceMonthlyTotalKey;
 import org.candlepin.subscriptions.db.model.ServiceLevel;
@@ -55,6 +56,7 @@ public class InstancesResource implements InstancesApi {
       ImmutableMap.<InstanceReportSort, String>builder()
           .put(InstanceReportSort.DISPLAY_NAME, "displayName")
           .put(InstanceReportSort.LAST_SEEN, "lastSeen")
+          .put(InstanceReportSort.BILLING_PROVIDER, "billingProvider")
           .putAll(getUomSorts())
           .build();
 
@@ -78,6 +80,7 @@ public class InstancesResource implements InstancesApi {
       Integer limit,
       ServiceLevelType sla,
       UsageType usage,
+      BillingProviderType billingProvider,
       String displayNameContains,
       OffsetDateTime beginning,
       OffsetDateTime ending,
@@ -96,6 +99,12 @@ public class InstancesResource implements InstancesApi {
     String accountNumber = ResourceUtils.getAccountNumber();
     ServiceLevel sanitizedSla = ResourceUtils.sanitizeServiceLevel(sla);
     Usage sanitizedUsage = ResourceUtils.sanitizeUsage(usage);
+
+    BillingProvider billing =
+        Objects.isNull(billingProvider)
+            ? null
+            : BillingProvider.fromString(billingProvider.toString());
+
     String sanitizedDisplayNameSubstring =
         Objects.nonNull(displayNameContains) ? displayNameContains : "";
 
@@ -133,6 +142,7 @@ public class InstancesResource implements InstancesApi {
             minSockets,
             month,
             referenceUom,
+            billing,
             page);
     payload =
         hosts.getContent().stream()
@@ -154,6 +164,7 @@ public class InstancesResource implements InstancesApi {
                 .product(productId)
                 .serviceLevel(sla)
                 .usage(usage)
+                .billingProvider(billingProvider)
                 .measurements(measurements))
         .data(payload);
   }
@@ -173,6 +184,10 @@ public class InstancesResource implements InstancesApi {
     List<Double> measurementList = new ArrayList<>();
     instance.setId(host.getInstanceId());
     instance.setDisplayName(host.getDisplayName());
+
+    if (!Objects.isNull(host.getBillingProvider())) {
+      instance.setBillingProvider(host.getBillingProvider().asOpenApiEnum());
+    }
 
     for (String uom : measurements) {
       measurementList.add(host.getMonthlyTotal(monthId, Measurement.Uom.fromValue(uom)));
