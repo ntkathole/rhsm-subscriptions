@@ -153,7 +153,6 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-
   /tally/products/{product_id}/{metric_id}:
     description: "Operations on a data set of a given tally report."
     parameters:
@@ -238,7 +237,6 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       tags:
         - tally
-
   /tally/products/{product_id}:
     description: "Operations for a tally report of a specific account and product."
     parameters:
@@ -872,6 +870,27 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       tags:
         - subscriptions
+  /internal/resend-tally:
+    description: 'Operations to resend specific tally snapshots to marketplaces'
+    put:
+      summary: "Resend specific tally snapshots"
+      requestBody:
+        $ref: '#/components/requestBodies/UuidListBody'
+      responses:
+        '200':
+          description: "The request for resending the tally snapshots was accepted"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/ResendTally"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - internal
   /openapi.json:
     get:
       description: "Get the OpenAPI spec in JSON format."
@@ -924,6 +943,14 @@ components:
         ```
         Encoded (via `base64 -w0`):
         `eyJpZGVudGl0eSI6eyJhY2NvdW50X251bWJlciI6ImFjY291bnQxMjMiLCJ0eXBlIjoiVXNlciIsInVzZXIiOnsiaXNfb3JnX2FkbWluIjp0cnVlfSwiaW50ZXJuYWwiOnsib3JnX2lkIjoib3JnMTIzIn19fQo=`
+  requestBodies:
+    UuidListBody:
+      description: "A list of UUIDs"
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UuidList"
   responses:
     InternalServerError:
       description: "An internal server error has occurred and is not recoverable."
@@ -956,6 +983,13 @@ components:
           schema:
             $ref: "#/components/schemas/Errors"
   schemas:
+    UuidList:
+      type: object
+      properties:
+        uuids:
+          type: array
+          items:
+            type: string
     # Schemas ending in "Type" are intentionally named to prevent naming conflicts with db model classes
     GranularityType:
       type: string
@@ -1023,6 +1057,23 @@ components:
               type: string
             group:
               type: string
+    ResendTally:
+      properties:
+        meta:
+          $ref: "#/components/schemas/MetaCount"
+        data:
+          type: object
+          required:
+            - retallies_sent
+          properties:
+            retallies_sent:
+              type: integer
+    MetaCount:
+      required:
+        - count
+      properties:
+        count:
+          type: integer
     OptInConfig:
       required:
         - meta
@@ -1426,12 +1477,7 @@ components:
         links:
           $ref: "#/components/schemas/PageLinks"
         meta:
-          type: object
-          properties:
-            count:
-              type: integer
-          required:
-            - count
+          $ref: "#/components/schemas/MetaCount"
     Host:
       required:
         - display_name
