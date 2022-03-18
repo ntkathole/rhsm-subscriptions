@@ -25,10 +25,13 @@ import static org.candlepin.subscriptions.security.SecurityConfig.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.candlepin.subscriptions.exception.ErrorCode;
 import org.candlepin.subscriptions.exception.SubscriptionsException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
@@ -45,8 +48,10 @@ public class IdentityHeaderAuthenticationFilter extends AbstractPreAuthenticated
   private static final Logger log =
       LoggerFactory.getLogger(IdentityHeaderAuthenticationFilter.class);
   public static final String RH_IDENTITY_HEADER = "x-rh-identity";
+  public static final String RH_PSK_HEADER = "x-rh-swatch-psk";
 
   private final ObjectMapper mapper;
+
 
   public IdentityHeaderAuthenticationFilter(ObjectMapper mapper) {
     this.mapper = mapper;
@@ -54,21 +59,33 @@ public class IdentityHeaderAuthenticationFilter extends AbstractPreAuthenticated
 
   @Override
   protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-    System.out.println("Identity Filter");
     String identityHeader = request.getHeader(RH_IDENTITY_HEADER);
+    String pskHeader = request.getHeader(RH_PSK_HEADER);
 
-    // If the header is missing it will be passed down the chain.
-    if (!StringUtils.hasText(identityHeader)) {
-      log.debug("{} is empty", RH_IDENTITY_HEADER);
-      return null;
+    //Check PSK header first
+    if (StringUtils.hasText(pskHeader)) {
+      try {
+        var psk = new String(Base64.getDecoder().decode(pskHeader));
+        return new PskClientPrincipal(psk);
+      } catch (Exception e) {
+        log.error(SECURITY_STACKTRACE, RH_PSK_HEADER + " was not valid.", e);
+        // Initialize an empty principal. The IdentityHeaderAuthenticationProvider will validate it.
+        return new PskClientPrincipal();
+      }
+      //If missing check for Identity header
+    } else if (StringUtils.hasText(identityHeader)) {
+      try {
+        return createPrincipal(Base64.getDecoder().decode(identityHeader));
+      } catch (Exception e) {
+        log.error(SECURITY_STACKTRACE, RH_IDENTITY_HEADER + " was not valid.", e);
+        // Initialize an empty principal. The IdentityHeaderAuthenticationProvider will validate it.
+        return new InsightsUserPrincipal();
+      }
     }
-
-    try {
-      return createPrincipal(Base64.getDecoder().decode(identityHeader));
-    } catch (Exception e) {
-      log.error(SECURITY_STACKTRACE, RH_IDENTITY_HEADER + " was not valid.", e);
-      // Initialize an empty principal. The IdentityHeaderAuthenticationProvider will validate it.
-      return new InsightsUserPrincipal();
+    // If both headers are missing it will be passed down the chain.
+    else {
+      log.debug("{} and {} are empty", RH_IDENTITY_HEADER, RH_PSK_HEADER);
+      return null;
     }
   }
 
@@ -83,6 +100,7 @@ public class IdentityHeaderAuthenticationFilter extends AbstractPreAuthenticated
     }
     return identity;
   }
+
 
   /**
    * Credentials are not applicable in this case, so we return a dummy value.

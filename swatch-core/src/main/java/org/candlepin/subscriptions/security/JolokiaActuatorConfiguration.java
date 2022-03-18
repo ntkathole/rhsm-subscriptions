@@ -50,6 +50,8 @@ public class JolokiaActuatorConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired private SecurityProperties secProps;
   @Autowired private ConfigurableEnvironment env;
   @Autowired protected ObjectMapper mapper;
+  @Autowired private IdentityHeaderAuthoritiesMapper identityHeaderAuthoritiesMapper;
+  @Autowired private AuthProperties authProperties;
 
   @Override
   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -62,7 +64,7 @@ public class JolokiaActuatorConfiguration extends WebSecurityConfigurerAdapter {
   public AuthenticationProvider jolokiaIdentityHeaderAuthenticationProvider(
       @Qualifier("jolokiaIdentityHeaderAuthenticationDetailsService")
           IdentityHeaderAuthenticationDetailsService detailsService) {
-    return new IdentityHeaderAuthenticationProvider(detailsService);
+    return new IdentityHeaderAuthenticationProvider(detailsService, identityHeaderAuthoritiesMapper, authProperties);
   }
 
   @Bean

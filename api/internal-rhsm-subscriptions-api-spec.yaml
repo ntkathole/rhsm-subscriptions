@@ -10,7 +10,7 @@ servers:
       PATH_PREFIX:
         default: api
       APP_NAME:
-        default: internal-rhsm-subscriptions
+        default: rhsm-subscriptions
   - url: https://{HOSTNAME}/{PATH_PREFIX}/{APP_NAME}/v1
     variables:
       HOSTNAME:
@@ -23,25 +23,9 @@ servers:
       PATH_PREFIX:
         default: api
       APP_NAME:
-        default: internal-rhsm-subscriptions
+        default: rhsm-subscriptions
 
 paths:
-  /version:
-    description: "Provides version and build information about the deployed application."
-    get:
-      summary: "Request version and build information about the deployed application."
-      operationId: getVersion
-      tags:
-        - version
-      responses:
-        '200':
-          description: 'The request for version information was successful.'
-          content:
-            application/vnd.api+json:
-              schema:
-                $ref: "#/components/schemas/VersionInfo"
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /internal/subscriptions/sync/org/{org_id}:
     description: "Force sync of subscriptions for given org_id."
     parameters:
@@ -101,29 +85,18 @@ paths:
 
 components:
   securitySchemes:
-    3ScaleIdentity:
+    PskIdentity:
       type: apiKey
       in: header
-      name: x-rh-identity
+      name: x-rh-swatch-psk
       description: |
-        Base64-encoded JSON identity header provided by 3Scale. Contains an
-        account number of the user issuing the request. Format of the JSON:
+        Base64-encoded psk header containing Pre Shared Key. Contains an
+        UUID string:
         ```
-        {
-            "identity": {
-                "account_number": "account123",
-                "type": "User",
-                "user" : {
-                    "is_org_admin": true
-                },
-                "internal" : {
-                    "org_id": "org123"
-                }
-            }
-        }
+        c9a98753-2092-4617-b226-5c2653330b3d
         ```
         Encoded (via `base64 -w0`):
-        `eyJpZGVudGl0eSI6eyJhY2NvdW50X251bWJlciI6ImFjY291bnQxMjMiLCJ0eXBlIjoiVXNlciIsInVzZXIiOnsiaXNfb3JnX2FkbWluIjp0cnVlfSwiaW50ZXJuYWwiOnsib3JnX2lkIjoib3JnMTIzIn19fQo=`
+        `YzlhOTg3NTMtMjA5Mi00NjE3LWIyMjYtNWMyNjUzMzMwYjNk`
   responses:
     InternalServerError:
       description: "An internal server error has occurred and is not recoverable."
@@ -203,4 +176,4 @@ components:
           type: string
 
 security:
-  - 3ScaleIdentity: []
+  - PskIdentity: []

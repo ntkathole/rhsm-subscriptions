@@ -78,7 +78,8 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired protected RbacProperties rbacProperties;
   @Autowired protected ConfigurableEnvironment env;
   @Autowired protected RbacService rbacService;
-  
+  @Autowired protected AuthProperties authProperties;
+
   @Override
   public void configure(AuthenticationManagerBuilder auth) {
     // Add our AuthenticationProvider to the Provider Manager's list
@@ -98,7 +99,7 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
   public AuthenticationProvider identityHeaderAuthenticationProvider(
       @Qualifier("identityHeaderAuthenticationDetailsService")
           IdentityHeaderAuthenticationDetailsService detailsService) {
-    return new IdentityHeaderAuthenticationProvider(detailsService);
+    return new IdentityHeaderAuthenticationProvider(detailsService, identityHeaderAuthoritiesMapper(), authProperties);
   }
 
   // NOTE: intentionally *not* annotated w/ @Bean; @Bean causes an *extra* use as an application
@@ -144,8 +145,7 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
     String apiPath =
         env.getRequiredProperty(
             "rhsm-subscriptions.package_uri_mappings.org.candlepin.subscriptions.resteasy");
-    http.authenticationProvider(identityHeaderAuthenticationProvider(
-            identityHeaderAuthenticationDetailsService(secProps, rbacProperties, rbacService)))
+    http
         .addFilter(identityHeaderAuthenticationFilter())
         .addFilterAfter(mdcFilter(), IdentityHeaderAuthenticationFilter.class)
         .addFilterAt(antiCsrfFilter(secProps, env), CsrfFilter.class)
@@ -163,12 +163,10 @@ public class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
         .anonymous() // Creates an anonymous user if no header is present at all. Prevents NPEs
         .and()
         .authorizeRequests()
-        .antMatchers("/**/openapi.*", "/**/version", "/api-docs/**", "/webjars/**")
+        .antMatchers("/**/openapi.*", "/**/internalopenapi.*", "/**/version", "/api-docs/**", "/webjars/**")
         .permitAll()
         // ingress security uses server settings (require ssl cert auth), so permit all here
         .antMatchers(String.format("/%s/ingress/**", apiPath))
-        .permitAll()
-        .antMatchers(String.format("/%s/internal/**", apiPath))
         .permitAll()
         // Allow access to the Spring Actuator "root" which displays the available endpoints
         .requestMatchers(

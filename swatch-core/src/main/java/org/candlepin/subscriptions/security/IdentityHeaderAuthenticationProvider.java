@@ -22,17 +22,29 @@ package org.candlepin.subscriptions.security;
 
 import static org.candlepin.subscriptions.security.IdentityHeaderAuthenticationFilter.*;
 
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.mapping.Attributes2GrantedAuthoritiesMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedCredentialsNotFoundException;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+
 
 /**
  * This class is responsible for validating the principal. If a valid principal is found, the
@@ -45,21 +57,33 @@ public class IdentityHeaderAuthenticationProvider implements AuthenticationProvi
   private static final Logger log =
       LoggerFactory.getLogger(IdentityHeaderAuthenticationProvider.class);
 
-  private int order = -1; // default: same as non-ordered
+  private static final String ROLE_INTERNAL = "ROLE_INTERNAL";
+
+  private int order = 2; // default: same as non-ordered
 
   private final IdentityHeaderAuthenticationDetailsService userDetailsService;
 
+  private Attributes2GrantedAuthoritiesMapper authMapper;
+
+  private final AuthProperties authProps;
+
+  private final Map<String, String> pskAppMap;
+
   public IdentityHeaderAuthenticationProvider(
-      IdentityHeaderAuthenticationDetailsService userDetailsService) {
+      IdentityHeaderAuthenticationDetailsService userDetailsService, Attributes2GrantedAuthoritiesMapper authMapper,
+      AuthProperties authProperties) {
     this.userDetailsService = userDetailsService;
+    this.authMapper = authMapper;
+    this.authProps = authProperties;
+    this.pskAppMap = createPskAppMap();
   }
 
   /**
-   * Validates the incoming principal that was extracted from the x-rh-identity header by the {@link
+   * Validates the incoming principal that was extracted from the x-rh-identity or x-rh-swatch-psk header by the {@link
    * IdentityHeaderAuthenticationFilter}. The principal is considered authenticated if the
-   * account_number and org_id are present as this would have come from 3Scale.
+   * account_number and org_id are present as this would have come from 3Scale or if the PSK exists for a client.
    *
-   * @param authentication contains the pre-authenticated principal created from x-rh-identity
+   * @param authentication contains the pre-authenticated principal created from x-rh-identity or x-rh-swatch-psk
    * @return an approved Authentication object
    * @throws AuthenticationException if any part of the principal is invalid.
    */
@@ -72,7 +96,11 @@ public class IdentityHeaderAuthenticationProvider implements AuthenticationProvi
     log.debug("PreAuthenticated authentication request: {}", authentication);
 
     Object principal = authentication.getPrincipal();
-    if (principal instanceof InsightsUserPrincipal) {
+
+    if(principal instanceof PskClientPrincipal) {
+      return authenticatePsk(authentication, (PskClientPrincipal) principal);
+    }
+    else if (principal instanceof InsightsUserPrincipal) {
       validateUserPrincipal(authentication, (InsightsUserPrincipal) principal);
     }
 
@@ -85,6 +113,22 @@ public class IdentityHeaderAuthenticationProvider implements AuthenticationProvi
     result.setAuthenticated(true); // this is actually done in the constructor but explicit is good
     result.setDetails(authentication.getDetails());
 
+    return result;
+  }
+
+  private Authentication authenticatePsk(Authentication authentication, PskClientPrincipal pskClientPrincipal ) {
+    if(!StringUtils.hasText(pskClientPrincipal.getPreSharedKey()) || !pskAppMap.containsKey(pskClientPrincipal.getPreSharedKey()) ) {
+      throw new PreAuthenticatedCredentialsNotFoundException(
+          RH_PSK_HEADER + " is invalid");
+    }
+    var pskClient = pskAppMap.get(pskClientPrincipal.getPreSharedKey());
+    var roles  = Collections.singleton(ROLE_INTERNAL);
+    Collection<? extends GrantedAuthority> clientGAs = authMapper.getGrantedAuthorities(roles);
+    PreAuthenticatedAuthenticationToken result =
+        new PreAuthenticatedAuthenticationToken(
+            pskClient, authentication.getCredentials(), clientGAs);
+    result.setAuthenticated(true);
+    result.setDetails(authentication.getDetails());
     return result;
   }
 
@@ -103,6 +147,19 @@ public class IdentityHeaderAuthenticationProvider implements AuthenticationProvi
       throw new PreAuthenticatedCredentialsNotFoundException(
           RH_IDENTITY_HEADER + " is missing required data", e);
     }
+  }
+
+
+  private Map<String, String> createPskAppMap() {
+    Map<String, String> pskMap = new HashMap();
+    if (StringUtils.hasText(authProps.getSwatchPsks())) {
+      var swatchPsks = new String(Base64.getDecoder().decode(authProps.getSwatchPsks()));
+      if (StringUtils.hasText(swatchPsks)) {
+        JSONObject psksJson = new JSONObject(swatchPsks);
+        psksJson.keySet().forEach(appName -> pskMap.put(psksJson.getString(appName), appName));
+      }
+    }
+    return pskMap;
   }
 
   @Override
