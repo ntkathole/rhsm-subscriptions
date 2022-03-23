@@ -27,16 +27,12 @@ parameters:
     value: 'rhsm-subscription-hec'
   - name: SPLUNK_SOURCE_TYPE
     value: 'springboot_server'
-  - name: SPLUNK_MESSAGE_FORMAT
-    value: 'text'
   - name: SPLUNK_HEC_URL
     value: https://splunk-hec.redhat.com:8088
-  - name: SPLUNK_HEC_CONNECT_TIMEOUT
-    value: '5000'
   - name: SPLUNK_HEC_BATCH_SIZE
-    value: '1'
-  - name: SPLUNK_HEC_TERMINATION_TIMEOUT
-    value: '2000'
+    value: '0'
+   - name: SPLUNK_HEC_RETRY_COUNT
+     value: 3
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
@@ -119,10 +115,10 @@ objects:
               value: ${SPLUNK_SOURCE}
             - name: SPLUNK_SOURCE_TYPE
               value: ${SPLUNK_SOURCE_TYPE}
-            - name: SPLUNK_MESSAGE_FORMAT
-              value: ${SPLUNK_MESSAGE_FORMAT}
             - name: SPLUNK_HEC_BATCH_SIZE
               value: ${SPLUNK_HEC_BATCH_SIZE}
+            - name: SPLUNK_HEC_RETRY_COUNT
+              value: ${SPLUNK_HEC_RETRY_COUNT}
           volumeMounts:
             - name: logs
               mountPath: /logs
