@@ -36,6 +36,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-rest-client-jackson'
     implementation 'io.quarkus:quarkus-rest-client'
     implementation libraries["quarkus-logging-logback"]
+    implementation libraries["quarkus-logging-splunk"]
     implementation libraries["splunk-library-javalogging"]
     testImplementation 'io.quarkus:quarkus-junit5'
     compileOnly libraries["lombok"]
