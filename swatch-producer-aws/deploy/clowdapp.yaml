@@ -31,8 +31,8 @@ parameters:
     value: https://splunk-hec.redhat.com:8088
   - name: SPLUNK_HEC_BATCH_SIZE
     value: '0'
-   - name: SPLUNK_HEC_RETRY_COUNT
-     value: 3
+  - name: SPLUNK_HEC_RETRY_COUNT
+    value: '3'
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
