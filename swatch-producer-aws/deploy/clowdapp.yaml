@@ -21,7 +21,22 @@ parameters:
     value: quay.io/cloudservices/swatch-producer-aws
   - name: IMAGE_TAG # bonfire takes precedence and pulls latest unless the bonfire -i flag is used
     value: latest
-
+  - name: ENABLE_SPLUNK_HEC
+    value: 'true'
+  - name: SPLUNK_SOURCE
+    value: 'rhsm-subscription-hec'
+  - name: SPLUNK_SOURCE_TYPE
+    value: 'springboot_server'
+  - name: SPLUNK_MESSAGE_FORMAT
+    value: 'text'
+  - name: SPLUNK_HEC_URL
+    value: https://splunk-hec.redhat.com:8088
+  - name: SPLUNK_HEC_CONNECT_TIMEOUT
+    value: '5000'
+  - name: SPLUNK_HEC_BATCH_SIZE
+    value: '1'
+  - name: SPLUNK_HEC_TERMINATION_TIMEOUT
+    value: '2000'
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
@@ -80,6 +95,34 @@ objects:
             limits:
               cpu: ${CPU_LIMIT}
               memory: ${MEMORY_LIMIT}
+          env:
+            - name: ENABLE_SPLUNK_HEC
+              value: ${ENABLE_SPLUNK_HEC}
+            - name: SPLUNKMETA_namespace
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: SPLUNKMETA_host
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: SPLUNK_HEC_URL
+              value: ${SPLUNK_HEC_URL}
+            - name: SPLUNK_HEC_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: splunk-hec-external
+                  key: token
+            - name: SPLUNK_SOURCE
+              value: ${SPLUNK_SOURCE}
+            - name: SPLUNK_SOURCE_TYPE
+              value: ${SPLUNK_SOURCE_TYPE}
+            - name: SPLUNK_MESSAGE_FORMAT
+              value: ${SPLUNK_MESSAGE_FORMAT}
+            - name: SPLUNK_HEC_BATCH_SIZE
+              value: ${SPLUNK_HEC_BATCH_SIZE}
           volumeMounts:
             - name: logs
               mountPath: /logs
