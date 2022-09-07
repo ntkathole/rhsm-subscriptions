@@ -21,7 +21,7 @@ ext.plugins = [
         "com.netflix.nebula:nebula-release-plugin:16.0.0",
         "de.undercouch:gradle-download-task:5.0.2",
         "io.quarkus:gradle-application-plugin:${versions.quarkus}",
-        "io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE",
+        "io.spring.gradle:dependency-management-plugin:1.0.13.RELEASE",
         "org.jsonschema2pojo:jsonschema2pojo-gradle-plugin:1.1.1",
         "org.openapitools:openapi-generator-gradle-plugin:5.4.0",
         "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3",
